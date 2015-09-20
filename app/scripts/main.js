@@ -62,7 +62,7 @@ Tile.prototype = {
 		});
 		if(!_noUpdate)
 			this.update();
-	},
+	}, 
 	update: function(_propagate,_checkRemovals){
 		if(!this)
 			console.log(error);
