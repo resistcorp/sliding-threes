@@ -4,16 +4,16 @@ $(function(){
 		width = 10, height = 10;
 	Tile.Init(container,width,height)
 	$("#dirCheck").on("change", Tile.swapDirs)
-	$("#darkCheck").on("change", function( event ) {
-		    $(document.body).toggleClass('dark', {dureation : 1000, easing : "easeOutSine", children: true})
-		})
+	$("#darkCheck").on("change", function() {
+		$(document.body).toggleClass('dark', {dureation : 1000, easing : "easeOutSine", children: true})
+	})
 })
 function Tile (){
 	this.el = $('<div class="tile" />');
 	this.el.data('tile', this);
 	this.neighbors = [];
 	this.moveList = [];
-};
+}
 //Tile.prototype = $('<div class="tile" />');
 Tile.prototype = {
 	init : function(_x, _y, _avoid1, _avoid2){
@@ -45,7 +45,7 @@ Tile.prototype = {
 			Tile.moving.push(this);
 		return this.el.stop().animate({
 				top: 5 + _y * 30 + 'px',
-				left: 5 + _x * 30 + 'px',
+				left: 5 + _x * 30 + 'px'
 			}, {
 				duration : 250,
 				complete : up
@@ -65,7 +65,7 @@ Tile.prototype = {
 	}, 
 	update: function(_propagate,_checkRemovals){
 		if(!this)
-			console.log(error);
+			console.log("error");
 		var x = this.x,
 			y = this.y,
 			moves = this.neighbors,
@@ -87,7 +87,7 @@ Tile.prototype = {
 		if(x < Tile.width -1){
 			neighbour = Tile.get(x +1, y);
 			if(!neighbour)
-				console.log(error);
+				console.log("error");
 			this.neighbors[2] = neighbour;
 			if(neighbour.isHole){
 				text = Tile.DIRS[0];
@@ -99,7 +99,7 @@ Tile.prototype = {
 		if(y > 0){
 			neighbour = Tile.get(x, y -1);
 			if(!neighbour)
-				console.log(error);
+				console.log("error");
 			this.neighbors[3] = neighbour;
 			if(neighbour.isHole){
 				text = Tile.DIRS[1];
@@ -111,7 +111,7 @@ Tile.prototype = {
 		if(x > 0){
 			neighbour = Tile.get(x -1, y);
 			if(!neighbour)
-				console.log(error);
+				console.log("error");
 			this.neighbors[0] = neighbour;
 			if(neighbour.isHole){
 				text = Tile.DIRS[2];
@@ -123,7 +123,7 @@ Tile.prototype = {
 		if(y < Tile.height -1){
 			neighbour = Tile.get(x, y +1);
 			if(!neighbour)
-				console.log(error);
+				console.log("error");
 			this.neighbors[1] = neighbour;
 			if(neighbour.isHole){
 				text = Tile.DIRS[3];
@@ -165,7 +165,8 @@ Tile.swapDirs = function(_val){
 	else
 		Tile.DIRTEXTS = {right : "◄",up : "▼",left : "►",down : "▲"};
 	Tile.invertedDirs = _val;
-	for(var tile of Tile.all) tile.update()
+	for(var tile of Tile.all)
+		tile.update()
 }
 Tile.checkGrid = function(){
 	var currentColor = -1, group = [], groups = []
@@ -250,9 +251,9 @@ Tile.Init = function(_container, _w, _h){
 		})
 	_container.on("click", ".tile", function( event ) {
 			var tile = $(this).data('tile');
-		    console.log( tile.tileColor, tile.moveList );
-		    Tile.applyMoves(tile.moveList)
-		    event.stopPropagation();
+			console.log( tile.tileColor, tile.moveList );
+			Tile.applyMoves(tile.moveList)
+			event.stopPropagation();
 		})
 	Tile.cols = [];
 	Tile.rows = [];
