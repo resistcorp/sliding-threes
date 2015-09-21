@@ -55,9 +55,12 @@ body.dark{
   vertical-align: middle;
   z-index: 10;
   border: solid 1px #F00;
+  cursor: pointer;
+  cursor: hand;
 }
 .hole{
   z-index: 1;
+  cursor: move;
 }
 .dark .color0{
   background-color: #F88;

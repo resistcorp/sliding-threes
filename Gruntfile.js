@@ -25,6 +25,12 @@ module.exports = function(grunt) {
         dest: 'dist',
         expand: true
       },
+      styles: {
+        cwd: 'app',
+        src: [ '**.css' ],
+        dest: 'dist',
+        expand: true
+      },
       publish: {
         cwd: 'dist',
         src: [ '**' ],
@@ -50,11 +56,20 @@ module.exports = function(grunt) {
       target: {
         options: {
           src: 'bower_components',
-          dest: 'app\lib',
+          dest: 'app\\lib',
 
           wiredep: {
             target: {
-              src: 'app/index.html' // point to your HTML file.
+              src: 'app/index.html', // point to your HTML file.
+              options: {
+                  cwd: '',
+                  dependencies: true,
+                  devDependencies: false,
+                  exclude: [],
+                  fileTypes: {},
+                  ignorePath: '',
+                  overrides: {}
+              }
             }
           }
         }
@@ -65,8 +80,8 @@ module.exports = function(grunt) {
         src: ['app/index.html'],
         dest: ['app/index.html'],
         replacements: [{
-          from: '../bower_components',                   // string replacement
-          to: '/lib'
+          from: /"\.\.\/bower_components/g,                   // string replacement
+          to: '"lib'
         }]
       }
     },
@@ -74,6 +89,10 @@ module.exports = function(grunt) {
       bower: {
         files: ['bower.json'],
         tasks: ['wiredep']
+      },
+      js: {
+        files: ['<%= config.app %>/scripts/{,*/}*.js'],
+        tasks: ['copy:build', 'browserSync:livereload']
       },
       gruntfile: {
         files: ['Gruntfile.js']
