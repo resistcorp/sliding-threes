@@ -13,6 +13,7 @@ function Tile (){
 	this.el.data('tile', this);
 	this.neighbors = [];
 	this.moveList = [];
+	this.isDirty = true;
 }
 //Tile.prototype = $('<div class="tile" />');
 Tile.prototype = {
@@ -30,6 +31,18 @@ Tile.prototype = {
 		this.placeAt(_x, _y, true);
 		return this;
 	},
+	dirty: function(){
+		this.isDirty = true;
+		var index = Tile.dirties.indexOf(this);
+		if(index == -1)
+			Tile.dirties.push(this);
+	},
+	removeClass: function(_str){
+		return this.el.removeClass(_str);
+	},
+	addClass: function(_str){
+		return this.el.addClass(_str);
+	},
 	release : function(){
 		if(Tile.pool.indexOf(this) == -1)
 			Tile.pool.push(this);
@@ -40,9 +53,13 @@ Tile.prototype = {
 	moveTo : function(_x, _y){
 		this.x = _x;
 		this.y = _y;
-		var up = this.update.bind(this, true, true);
+		var up = this.arrive.bind(this, true, true);
 		if(Tile.moving.indexOf(this) == -1)
 			Tile.moving.push(this);
+		for(var tile of this.neighbors)
+			tile && tile.dirty();
+		this.dirty();
+		this.moving = true;
 		return this.el.stop().animate({
 				top: 5 + _y * 30 + 'px',
 				left: 5 + _x * 30 + 'px'
@@ -62,78 +79,63 @@ Tile.prototype = {
 		});
 		if(!_noUpdate)
 			this.update();
-	}, 
+	},
+	arrive:function(){
+		var index = Tile.moving.indexOf(this);
+		if(index != -1)
+			Tile.moving.splice(index, 1);
+		this.moving = false;
+		this.dirty();
+	},
 	update: function(_propagate,_checkRemovals){
-		if(!this)
-			console.log("error");
 		var x = this.x,
 			y = this.y,
-			moves = this.neighbors,
+			moves = this.moveList,
 			text = "", neighbour;
-		if(_checkRemovals){
-			var index = Tile.moving.indexOf(this);
-			if(index != -1)
-				Tile.moving.splice(index, 1);
-			if(Tile.moving.length == 0)
-				Tile.checkGrid();
-		}
-		while(moves.length){
-			neighbour = moves.pop()
-			if(_propagate && neighbour)
-				neighbour.update(false)
-		}
-		moves = this.moveList;
-		while(moves.length) moves.pop();
+		this.moveList.length = 0;
+		this.neighbors.length = 0;
 		if(x < Tile.width -1){
 			neighbour = Tile.get(x +1, y);
-			if(!neighbour)
-				console.log("error");
 			this.neighbors[2] = neighbour;
+			neighbour.neighbors[0] = this;
 			if(neighbour.isHole){
 				text = Tile.DIRS[0];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}
-			_propagate && neighbour.update(false);
 		}
 		if(y > 0){
 			neighbour = Tile.get(x, y -1);
-			if(!neighbour)
-				console.log("error");
 			this.neighbors[3] = neighbour;
+			neighbour.neighbors[1] = this;
 			if(neighbour.isHole){
 				text = Tile.DIRS[1];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}
-			_propagate && neighbour.update(false);
 		}
 		if(x > 0){
 			neighbour = Tile.get(x -1, y);
-			if(!neighbour)
-				console.log("error");
 			this.neighbors[0] = neighbour;
+			neighbour.neighbors[2] = this;
 			if(neighbour.isHole){
 				text = Tile.DIRS[2];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}
-			_propagate && neighbour.update(false);
 		}
 		if(y < Tile.height -1){
 			neighbour = Tile.get(x, y +1);
-			if(!neighbour)
-				console.log("error");
 			this.neighbors[1] = neighbour;
+			neighbour.neighbors[3] = this;
 			if(neighbour.isHole){
 				text = Tile.DIRS[3];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}
-			_propagate && neighbour.update(false);
 		}
-		this.moveList = moves;
 		this.el.text(text);
+		this.isDirty = false;
 	}
 };
 //Tile.COLORS = ["#F00", "#0F0", "#00F", "#FF0", "#0FF", "#F0F"];
@@ -145,6 +147,11 @@ Tile.height = 10;
 Tile.all = [];
 Tile.pool = [];
 Tile.moving = [];
+Tile.dirties = [];
+const 	left = 0,
+		down = 1,
+		right = 2,
+		up = 3;
 Tile.get = function(_x,_y){
 	if(_x >= Tile.width || _x < 0 )
 		return null;
@@ -210,7 +217,8 @@ Tile.applyMoves = function(_moves){
 		move = Tile.DIRS.indexOf(move);
 		var tile = Tile.hole.neighbors[move];
 		if(tile){
-			var x = Tile.hole.x,
+			Tile.swap(tile, Tile.hole);
+			/*var x = Tile.hole.x,
 				y = Tile.hole.y;
 			Tile.cols[x][y] = tile
 			Tile.rows[y][x] = tile
@@ -220,11 +228,21 @@ Tile.applyMoves = function(_moves){
 			Tile.rows[y][x] = Tile.hole;
 			tile.moveTo(Tile.hole.x,Tile.hole.y);
 			Tile.hole.moveTo(x,y);
-			if(!tile)
-				console.log('error')
-			tile.update(true);
+			tile.update(true);*/
 		}
 	}
+}
+Tile.swap = function(_tile1, _tile2){
+	var x = _tile2.x,
+		y = _tile2.y;
+	Tile.cols[x][y] = _tile1
+	Tile.rows[y][x] = _tile1
+	x = _tile1.x;
+	y = _tile1.y;
+	Tile.cols[x][y] = _tile2;
+	Tile.rows[y][x] = _tile2;
+	_tile1.moveTo(_tile2.x,_tile2.y);
+	_tile2.moveTo(x,y);
 }
 Tile.Init = function(_container, _w, _h){
 	var avoid1, avoid2, tile;
@@ -296,5 +314,67 @@ Tile.Init = function(_container, _w, _h){
 		width : (_w * 30 + 8) + 'px',
 		height : (_h * 30 + 8) + 'px'
 	})
+	Tile.Update();
+}
+Tile.Update = function(){
+	var tile, tile2, list, totest;
+	while(tile = Tile.dirties.pop() )
+		tile.update();
+	Tile.dirties = Tile.moving.concat();
+	/*list = Tile.all.concat();
+	totest = [];
+	while(list.length > 0){
+		tile = list.pop();
+		totest.push(tile);
+		var group = [tile];
+		var col = tile.color;
+		tile.removeClass("isGroup left right up down");
+		while(totest.length > 0){
+			tile = totest.pop();
+			tile2 = tile.neighbors[up];
+			if(tile2 && tile2.tileColor == col){
+				if(list.indexOf(tile2) != -1){
+					list.splice(list.indexOf(tile2), 1)
+					totest.push(tile2)
+					group.push(tile2)
+				}else{
+					tile.addClass('up')
+				}
+			}
+			tile2 = tile.neighbors[down];
+			if(tile2 && tile2.tileColor == col){
+				if(list.indexOf(tile2) != -1){
+					list.splice(list.indexOf(tile2), 1)
+					totest.push(tile2)
+					group.push(tile2)
+				}else{
+					tile.addClass('down')
+				}
+			}
+			tile2 = tile.neighbors[down];
+			if(list.indexOf(tile2) != -1){
+				list.splice(list.indexOf(tile2), 1)
+				if(tile2 && tile2.tileColor == col){
+					totest.push(tile2)
+					group.push(tile2)
+				}else{
+					tile.addClass('right')
+				}
+			}
+			tile2 = tile.neighbors[down];
+			if(list.indexOf(tile2) != -1){
+				list.splice(list.indexOf(tile2), 1)
+				if(tile2 && tile2.tileColor == col){
+					totest.push(tile2)
+					group.push(tile2)
+				}else{
+					tile.addClass('left')
+				}
+			}
+		}
+		if(group.length > 3)
+			for(tile of group) tile.el.addClass('isGroup')
+	}*/
+	requestAnimationFrame(Tile.Update);
 }
 Tile.swapDirs(false)
