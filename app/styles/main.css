@@ -48,15 +48,18 @@ body.dark{
 
 .tile {
   position : absolute;
-  width: 26px;
-  height: 26px;
-  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   text-align: center;
   vertical-align: middle;
   z-index: 10;
-  border: solid 1px #F00;
+  border: solid 1px #ddd;
   cursor: pointer;
   cursor: hand;
+}
+.dark .tile{
+  border-color: #222
 }
 .hole{
   z-index: 1;
@@ -110,27 +113,67 @@ body.dark{
   background-color: #A0D;
   border-color: #A0D;
 }
-.isGroup.left{
-  border-left-color: #000
+.left{
+  border-left-color: #ddd;
 }
-.isGroup.right{
-  border-right-color: #000
+.right{
+  border-right-color: #ddd;
 }
-.isGroup.up{
-  border-top-color: #000
+.up{
+  border-top-color: #ddd;
 }
-.isGroup.down{
-  border-bottom-color: #000
+.down{
+  border-bottom-color: #ddd;
 }
-.dark .isGroup.left{
-  border-left-color: #FFF
+.dark .left{
+  border-left-color: #222;
 }
-.dark .isGroup.right{
-  border-right-color: #FFF
+.dark .right{
+  border-right-color: #222;
 }
-.dark .isGroup.up{
-  border-top-color: #FFF
+.dark .up{
+  border-top-color: #222;
 }
-.dark .isGroup.down{
-  border-bottom-color: #FFF
+.dark .down{
+  border-bottom-color: #222;
+}
+.almostGroup{
+  border-color : #ddd;
+  border-radius: 2px;
+}
+.dark .almostGroup{
+  border-color : #222;
+}
+.almostGroup.up.left{
+  border-top-left-radius: 6px;
+}
+.almostGroup.up.right{
+  border-top-right-radius: 6px;
+}
+.almostGroup.down.right{
+  border-bottom-right-radius: 6px;
+}
+.almostGroup.down.left{
+  border-bottom-left-radius: 6px;
+}
+.isGroup{
+  border-radius: 0;
+}
+.isGroup.up.left{
+  border-top-left-radius: 6px;
+}
+.isGroup.up.right{
+  border-top-right-radius: 6px;
+}
+.isGroup.down.left{
+  border-bottom-left-radius: 6px;
+}
+.isGroup.down.right{
+  border-bottom-right-radius: 6px;
+}
+.noGroup{
+  border-color : #ddd;
+}
+.dark .noGroup{
+  border-color : #222;
 }

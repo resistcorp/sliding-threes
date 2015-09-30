@@ -27,7 +27,7 @@ module.exports = function(grunt) {
       },
       styles: {
         cwd: 'app',
-        src: [ '**.css' ],
+        src: [ '<%= config.app %>/styles/{,*/}*.css' ],
         dest: 'dist',
         expand: true
       },
@@ -99,7 +99,7 @@ module.exports = function(grunt) {
       },
       styles: {
         files: ['<%= config.app %>/styles/{,*/}*.css'],
-        tasks: ['newer:copy:styles', 'postcss']
+        tasks: ['copy:build', "browserSync:livereload"]
       }
     },
     browserSync: {
@@ -181,6 +181,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-autoprefixer');
   grunt.loadNpmTasks('grunt-text-replace');
 
+  // define the tasks
   grunt.registerTask('serve', 'start the server and preview your app', function (target) {
 
     if (target === 'dist') {
@@ -189,6 +190,7 @@ module.exports = function(grunt) {
 
     grunt.task.run([
       'clean:server',
+      'build',
       'wiredepCopy',
       'browserSync:livereload',
       'watch'
@@ -204,5 +206,6 @@ module.exports = function(grunt) {
     'Compiles all of the assets and copies the files to the build directory.', 
     [ 'build', 'copy:publish' ]
   );
-  // define the tasks
+  grunt.registerTask('default', "serve");
+
 };
