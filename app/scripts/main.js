@@ -9,13 +9,13 @@ $(function() {
 	})
 })
 function Tile () {
+	this.dirtyClass = ["true"]
 	this.el = $('<div class="tile" />');
 	this.el.data('tile', this);
 	this.neighbors = Tile.giveMeAnArray();
 	this.moveList = Tile.giveMeAnArray();
 	this.class = [];
 	this.addClass('tile');
-	this.dirtyClass = "true"
 	this.isDirty = true;
 }
 //Tile.prototype = $('<div class="tile" />');
@@ -61,10 +61,10 @@ Tile.prototype = {
 		for(str of _str.split(" "))
 			index = this.class.indexOf(str)
 			if(index != -1){
-				this.dirtyClass += str;
+				this.dirtyClass.push(str);
 				this.class.splice(index, 1);
 			}
-		if(this.dirtyClass && Tile.allDirtyClasses.indexOf(this) == -1)
+		if(this.dirtyClass.length && Tile.allDirtyClasses.indexOf(this) == -1)
 			Tile.allDirtyClasses.push(this)
 	},
 	addClass: function(_str, _time) {
@@ -73,7 +73,7 @@ Tile.prototype = {
 			if(str != "" && this.class.indexOf(str) == -1)
 				this.class.push(str);
 		if(this.class.length != l){
-		this.dirtyClass += "true";
+		this.dirtyClass.push("true");
 			if(Tile.allDirtyClasses.indexOf(this) == -1)
 				Tile.allDirtyClasses.push(this)
 		}
@@ -153,7 +153,7 @@ Tile.prototype = {
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}else if(neighbor.tileColor == this.tileColor){
-				classes.replace("right", "");
+				classes = classes.replace("right", "");
 				remClasses.push("right");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
@@ -168,7 +168,7 @@ Tile.prototype = {
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}else if(neighbor.tileColor == this.tileColor){
-				classes.replace("up", "");
+				classes = classes.replace("up", "");
 				remClasses.push("up");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
@@ -183,7 +183,7 @@ Tile.prototype = {
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}else if(neighbor.tileColor == this.tileColor){
-				classes.replace("left", "");
+				classes = classes.replace("left", "");
 				remClasses.push("left");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
@@ -198,14 +198,14 @@ Tile.prototype = {
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 			}else if(neighbor.tileColor == this.tileColor){
-				classes.replace("down", "");
+				classes = classes.replace("down", "");
 				remClasses.push("down");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
 			}
 		}
-		this.addClass(classes);
 		this.removeClass(remClasses.join(' '));
+		this.addClass(classes);
 		this.group = groups.length? groups[0] : []
 		this.group.push(this);
 		while(groups.length > 0) {
@@ -509,10 +509,10 @@ Tile.Update = function() {
 	}*/
 	while(Tile.allDirtyClasses.length){
 		tile = Tile.allDirtyClasses.shift();
-		if(tile.dirtyClass != ""){
-			tile.el.removeClass(tile.dirtyClass);
-			tile.dirtyClass = "";
-			tile.el.addClass(tile.class.join(' '), 500)
+		if(tile.dirtyClass.length){
+			tile.el.removeClass(tile.dirtyClass.join(" "));
+			tile.dirtyClass.length = 0;
+			tile.el.stop().addClass(tile.class.join(' '), 500)
 			requestAnimationFrame(Tile.Update);
 			return;
 		}
