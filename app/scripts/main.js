@@ -520,7 +520,7 @@ Tile.Update = function() {
 	while(Tile.allDirtyClasses.length){
 		tile = Tile.allDirtyClasses.shift();
 		if(!tile.moving && tile.dirtyClass){
-			tile.el.removeClass('up down left right isGroup almostGroup noGroup');
+			tile.el.removeClass('up down left right isGroup almostGroup noGroup', 500);
 			if(!tile.moving)
 				tile.el.removeClass('moving');
 
