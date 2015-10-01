@@ -11,6 +11,8 @@ $(function() {
 function Tile () {
 	this.dirtyClass = ["true"]
 	this.el = $('<div class="tile" />');
+	this.child = $('<div />')
+	this.el.append(this.child);
 	this.el.data('tile', this);
 	this.neighbors = Tile.giveMeAnArray();
 	this.moveList = Tile.giveMeAnArray();
@@ -52,31 +54,27 @@ Tile.prototype = {
 			if(index != -1)
 				Tile.groups.splice(index, 1);
 			this.group = null;
-			this.el.text('');
+			this.setText('');
 		}
 		return this;
 	},
 	removeClass: function(_str, _time) {
 		var str, index;
-		for(str of _str.split(" "))
-			index = this.class.indexOf(str)
+		for(str of _str.split(" ")){
+			index = this.class.indexOf(str);
 			if(index != -1){
-				this.dirtyClass.push(str);
 				this.class.splice(index, 1);
 			}
-		if(this.dirtyClass.length && Tile.allDirtyClasses.indexOf(this) == -1)
-			Tile.allDirtyClasses.push(this)
+		}
 	},
 	addClass: function(_str, _time) {
 		var l = this.class.length;
 		for(var str of _str.split(" "))
 			if(str != "" && this.class.indexOf(str) == -1)
 				this.class.push(str);
-		if(this.class.length != l){
-		this.dirtyClass.push("true");
-			if(Tile.allDirtyClasses.indexOf(this) == -1)
-				Tile.allDirtyClasses.push(this)
-		}
+	},
+	setText : function(_str){
+		this.child.text(_str);
 	},
 	release : function() {
 		if(Tile.pool.indexOf(this) == -1)
@@ -88,7 +86,7 @@ Tile.prototype = {
 	moveTo : function(_x, _y) {
 		this.x = _x;
 		this.y = _y;
-		var up = this.arrive.bind(this, true, true);
+		var up = this.arrive.bind(this);
 		if(Tile.moving.indexOf(this) == -1)
 			Tile.moving.push(this);
 		this.dirty();
@@ -99,11 +97,16 @@ Tile.prototype = {
 				tile.neighbors[tile.neighbors.indexOf(this)] = null;
 			this.neighbors[i] = null;
 		}
-		return this.el.stop().animate({
-				top: 5 + _y * 30 + 'px',
-				left: 5 + _x * 30 + 'px'
+		//this.el.removeClass('up down left right isGroup almostGroup noGroup');
+		//this.el.addClass('tile');
+		//if(this.isHole)
+			//this.el.addClass('hole');
+		this.el.addClass("moving")
+		return this.el.animate({
+				top: 5 + _y * 100 + 'px',
+				left: 5 + _x * 100 + 'px'
 			}, {
-				duration : 250,
+				duration : 500,
 				complete : up
 			});
 	},
@@ -118,9 +121,10 @@ Tile.prototype = {
 				tile.neighbors[tile.neighbors.indexOf(this)] = null;
 			this.neighbors[i] = null;
 		}
-		this.el.css({
-			top: 5 + _y * 30 + 'px',
-			left: 5 + _x * 30 + 'px'
+		this.removeClass('moving');
+		this.el.stop().css({
+			top: 5 + _y * 100 + 'px',
+			left: 5 + _x * 100 + 'px'
 		});
 		if(!_noUpdate)
 			this.update();
@@ -130,6 +134,7 @@ Tile.prototype = {
 		if(index != -1)
 			Tile.moving.splice(index, 1);
 		this.moving = false;
+		this.removeClass('moving');
 		this.dirty();
 	},
 	update: function() {
@@ -206,8 +211,9 @@ Tile.prototype = {
 		}
 		this.removeClass(remClasses.join(' '));
 		this.addClass(classes);
-		this.group = groups.length? groups[0] : []
-		this.group.push(this);
+		this.group = groups.length? groups[0] : [];
+		if(this.group.indexOf(this) == -1)
+			this.group.push(this);
 		while(groups.length > 0) {
 			var group = groups.pop();
 			if(group != this.group && groups.indexOf(group) == -1) {//treat each one, once
@@ -225,10 +231,17 @@ Tile.prototype = {
 		}
 		Tile.groups.push(this.group);
 		this.group.dirty = true;
-		this.el.text(text);
+		this.setText(text);
 		this.isDirty = false;
 		Tile.releaseArray(remClasses);
 		Tile.releaseArray(groups);
+		group = this.class.join(' ');
+		neighbor = this.el.prop('class');
+		if(neighbor != group){
+			this.dirtyClass = true;
+			if(Tile.allDirtyClasses.indexOf(this) == -1)
+				Tile.allDirtyClasses.push(this);
+		}
 	}
 };
 //Tile.COLORS = ["#F00", "#0F0", "#00F", "#FF0", "#0FF", "#F0F"];
@@ -349,12 +362,12 @@ Tile.swap = function(_tile1, _tile2) {
 	Tile.rows[y][x] = _tile2;
 	_tile1.moveTo(_tile2.x,_tile2.y);
 	_tile2.moveTo(x,y);
-	_tile2.update();
+	/*_tile2.update();
 	_tile1.update();
 	for(var tile of _tile2.neighbors)
 		tile && tile.dirty();
 	for(tile of _tile1.neighbors)
-		tile && tile.dirty();
+		tile && tile.dirty();*/
 }
 Tile.Init = function(_container, _w, _h) {
 	var avoid1, avoid2, tile;
@@ -423,8 +436,8 @@ Tile.Init = function(_container, _w, _h) {
 	}
 	for(tile of Tile.all) tile.update()
 	_container.css({
-		width : (_w * 30 + 8) + 'px',
-		height : (_h * 30 + 8) + 'px'
+		width : (_w * 100 + 8) + 'px',
+		height : (_h * 100 + 8) + 'px'
 	})
 	Tile.Update();
 }
@@ -442,8 +455,8 @@ Tile.Update = function() {
 				if( group.length > 3){
 					tile.removeClass('almostGroup noGroup');
 					tile.addClass('isGroup');
-					if(tile.el.text() == "")
-						tile.el.text(group.length);
+					if(tile.child.text() == "")
+						tile.setText(group.length);
 				}else if( group.length > 1){
 					tile.removeClass('isGroup noGroup');
 					tile.addClass('almostGroup');
@@ -509,10 +522,13 @@ Tile.Update = function() {
 	}*/
 	while(Tile.allDirtyClasses.length){
 		tile = Tile.allDirtyClasses.shift();
-		if(tile.dirtyClass.length){
-			tile.el.removeClass(tile.dirtyClass.join(" "));
-			tile.dirtyClass.length = 0;
-			tile.el.stop().addClass(tile.class.join(' '), 500)
+		if(tile.dirtyClass){
+			tile.el.removeClass('up down left right isGroup almostGroup noGroup');
+			if(!tile.moving)
+				tile.el.removeClass('moving');
+
+			tile.dirtyClass = false;
+			tile.el.addClass(tile.class.join(' '))
 			requestAnimationFrame(Tile.Update);
 			return;
 		}

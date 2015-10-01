@@ -18,11 +18,14 @@ body.dark{
   font-weight: 200;
   line-height: 30px;
   border-radius: 6px;
-  transform: scale(2.0);
+  transform: scale(0.8);
   transform-origin: top;
 }
 .hole, .hero-unit{
   background-color: #ddd;
+}
+.hole{
+  border: 1px solid gray;
 }
 
 .dark .hole, .dark .hero-unit{
@@ -48,15 +51,24 @@ body.dark{
 
 .tile {
   position : absolute;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  text-align: center;
-  vertical-align: middle;
+  width: 100px;
+  height: 100px;
   z-index: 10;
-  border: solid 1px #ddd;
   cursor: pointer;
   cursor: hand;
+}
+.tile>div{
+  border-radius: 6px;
+  padding-top: 30px;
+  position: absolute;
+  margin:3px;
+  font-size: 80px;
+  text-align: center;
+  vertical-align: middle;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 .dark .tile{
   border-color: #222
@@ -65,115 +77,140 @@ body.dark{
   z-index: 1;
   cursor: move;
 }
-.dark .color0{
+.dark .color0>div{
   background-color: #F88;
-  border-color: #F88;
-}
-.dark .color1{
-  background-color: #8F8;
-  border-color: #8F8;
-}
-.dark .color2{
-  background-color: #88F;
-  border-color: #88F;
-}
-.dark .color3{
-  background-color: #FF8;
-  border-color: #FF8;
-}
-.dark .color4{
-  background-color: #8FF;
-  border-color: #8FF;
-}
-.dark .color5{
-  background-color: #F8F;
-  border-color: #F8F;
-}
-.color0{
-  background-color: #A00;
   border-color: #A00;
 }
-.color1{
-  background-color: #0A0;
+.dark .color1>div{
+  background-color: #8F8;
   border-color: #0A0;
 }
-.color2{
-  background-color: #00A;
+.dark .color2>div{
+  background-color: #88F;
   border-color: #00A;
 }
-.color3{
-  background-color: #AA0;
+.dark .color3>div{
+  background-color: #FF8;
   border-color: #AA0;
 }
-.color4{
-  background-color: #0AA;
+.dark .color4>div{
+  background-color: #8FF;
   border-color: #0AA;
 }
-.color5{
-  background-color: #A0D;
+.dark .color5>div{
+  background-color: #F8F;
   border-color: #A0D;
 }
-.left{
-  border-left-color: #ddd;
+.color0>div{
+  background-color: #A00;
+  border-color: #F88;
 }
-.right{
-  border-right-color: #ddd;
+.color1>div{
+  background-color: #0A0;
+  border-color: #8F8;
 }
-.up{
-  border-top-color: #ddd;
+.color2>div{
+  background-color: #00A;
+  border-color: #88F;
 }
-.down{
-  border-bottom-color: #ddd;
+.color3>div{
+  background-color: #AA0;
+  border-color: #FF8;
 }
-.dark .left{
-  border-left-color: #222;
+.color4>div{
+  background-color: #0AA;
+  border-color: #8FF;
 }
-.dark .right{
-  border-right-color: #222;
+.color5>div{
+  background-color: #A0D;
+  border-color: #F8F;
 }
-.dark .up{
-  border-top-color: #222;
+/* .left>div{
 }
-.dark .down{
-  border-bottom-color: #222;
+.right>div{
 }
-.almostGroup{
-  border-color : #ddd;
-  border-radius: 2px;
+.up>div{
 }
-.dark .almostGroup{
+.down>div{
+}
+.dark .left>div{
+}
+.dark .right>div{
+}
+.dark .up>div{
+}
+.dark .down>div{
+} */
+.almostGroup>div{
+  border-radius: 3px;
+  margin:1.5px;
+}
+.dark .almostGroup>div{
   border-color : #222;
 }
-.almostGroup.up.left{
+.almostGroup.up.left>div{
   border-top-left-radius: 6px;
 }
-.almostGroup.up.right{
+.almostGroup.up.right>div{
   border-top-right-radius: 6px;
 }
-.almostGroup.down.right{
+.almostGroup.down.right>div{
   border-bottom-right-radius: 6px;
 }
-.almostGroup.down.left{
+.almostGroup.down.left>div{
   border-bottom-left-radius: 6px;
 }
-.isGroup{
-  border-radius: 0;
+.almostGroup.left>div{
+  margin-left:3px;
 }
-.isGroup.up.left{
-  border-top-left-radius: 6px;
+.almostGroup.right>div{
+  margin-right:3px;
 }
-.isGroup.up.right{
-  border-top-right-radius: 6px;
+.almostGroup.up>div{
+  margin-top:3px;
 }
-.isGroup.down.left{
-  border-bottom-left-radius: 6px;
+.almostGroup.down>div{
+  margin-bottom:3px;
 }
-.isGroup.down.right{
-  border-bottom-right-radius: 6px;
+.isGroup>div{
+  border-radius: 3.5px;
+  margin: -1px;
+  border: solid 0px;
 }
-.noGroup{
+.isGroup.up.left>div{
+  border-top-left-radius: 10px;
+}
+.isGroup.up.right>div{
+  border-top-right-radius: 10px;
+}
+.isGroup.down.left>div{
+  border-bottom-left-radius: 10px;
+}
+.isGroup.down.right>div{
+  border-bottom-right-radius: 10px;
+}
+.isGroup.left>div{
+  margin-left:1px;
+  border-left-width:2.5px;
+}
+.isGroup.right>div{
+  margin-right:1px;
+  border-right-width:2.5px;
+}
+.isGroup.up>div{
+  margin-top:1px;
+  border-top-width:2.5px;
+}
+.isGroup.down>div{
+  margin-bottom:1px;
+  border-bottom-width:2.5px;
+}
+/* .noGroup{
   border-color : #ddd;
 }
 .dark .noGroup{
   border-color : #222;
+} */
+.tile.moving>div{
+  border-radius: 25%;
 }
