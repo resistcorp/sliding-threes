@@ -18,11 +18,14 @@ body.dark{
   font-weight: 200;
   line-height: 30px;
   border-radius: 6px;
-  transform: scale(2.0);
+  transform: scale(0.8);
   transform-origin: top;
 }
 .hole, .hero-unit{
   background-color: #ddd;
+}
+.hole{
+  border: 1px solid gray;
 }
 
 .dark .hole, .dark .hero-unit{
@@ -48,89 +51,166 @@ body.dark{
 
 .tile {
   position : absolute;
-  width: 26px;
-  height: 26px;
-  border-radius: 3px;
-  text-align: center;
-  vertical-align: middle;
+  width: 100px;
+  height: 100px;
   z-index: 10;
-  border: solid 1px #F00;
   cursor: pointer;
   cursor: hand;
+}
+.tile>div{
+  border-radius: 6px;
+  padding-top: 30px;
+  position: absolute;
+  margin:3px;
+  font-size: 80px;
+  text-align: center;
+  vertical-align: middle;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+.dark .tile{
+  border-color: #222
 }
 .hole{
   z-index: 1;
   cursor: move;
 }
-.dark .color0{
+.dark .color0>div{
   background-color: #F88;
-  border-color: #F88;
-}
-.dark .color1{
-  background-color: #8F8;
-  border-color: #8F8;
-}
-.dark .color2{
-  background-color: #88F;
-  border-color: #88F;
-}
-.dark .color3{
-  background-color: #FF8;
-  border-color: #FF8;
-}
-.dark .color4{
-  background-color: #8FF;
-  border-color: #8FF;
-}
-.dark .color5{
-  background-color: #F8F;
-  border-color: #F8F;
-}
-.color0{
-  background-color: #A00;
   border-color: #A00;
 }
-.color1{
-  background-color: #0A0;
+.dark .color1>div{
+  background-color: #8F8;
   border-color: #0A0;
 }
-.color2{
-  background-color: #00A;
+.dark .color2>div{
+  background-color: #88F;
   border-color: #00A;
 }
-.color3{
-  background-color: #AA0;
+.dark .color3>div{
+  background-color: #FF8;
   border-color: #AA0;
 }
-.color4{
-  background-color: #0AA;
+.dark .color4>div{
+  background-color: #8FF;
   border-color: #0AA;
 }
-.color5{
-  background-color: #A0D;
+.dark .color5>div{
+  background-color: #F8F;
   border-color: #A0D;
 }
-.isGroup.left{
-  border-left-color: #000
+.color0>div{
+  background-color: #A00;
+  border-color: #F88;
 }
-.isGroup.right{
-  border-right-color: #000
+.color1>div{
+  background-color: #0A0;
+  border-color: #8F8;
 }
-.isGroup.up{
-  border-top-color: #000
+.color2>div{
+  background-color: #00A;
+  border-color: #88F;
 }
-.isGroup.down{
-  border-bottom-color: #000
+.color3>div{
+  background-color: #AA0;
+  border-color: #FF8;
 }
-.dark .isGroup.left{
-  border-left-color: #FFF
+.color4>div{
+  background-color: #0AA;
+  border-color: #8FF;
 }
-.dark .isGroup.right{
-  border-right-color: #FFF
+.color5>div{
+  background-color: #A0D;
+  border-color: #F8F;
 }
-.dark .isGroup.up{
-  border-top-color: #FFF
+/* .left>div{
 }
-.dark .isGroup.down{
-  border-bottom-color: #FFF
+.right>div{
+}
+.up>div{
+}
+.down>div{
+}
+.dark .left>div{
+}
+.dark .right>div{
+}
+.dark .up>div{
+}
+.dark .down>div{
+} */
+.almostGroup>div{
+  border-radius: 3px;
+  margin:1.5px;
+}
+.dark .almostGroup>div{
+  border-color : #222;
+}
+.almostGroup.up.left>div{
+  border-top-left-radius: 6px;
+}
+.almostGroup.up.right>div{
+  border-top-right-radius: 6px;
+}
+.almostGroup.down.right>div{
+  border-bottom-right-radius: 6px;
+}
+.almostGroup.down.left>div{
+  border-bottom-left-radius: 6px;
+}
+.almostGroup.left>div{
+  margin-left:3px;
+}
+.almostGroup.right>div{
+  margin-right:3px;
+}
+.almostGroup.up>div{
+  margin-top:3px;
+}
+.almostGroup.down>div{
+  margin-bottom:3px;
+}
+.isGroup>div{
+  border-radius: 3.5px;
+  margin: -1px;
+  border: solid 0px;
+}
+.isGroup.up.left>div{
+  border-top-left-radius: 10px;
+}
+.isGroup.up.right>div{
+  border-top-right-radius: 10px;
+}
+.isGroup.down.left>div{
+  border-bottom-left-radius: 10px;
+}
+.isGroup.down.right>div{
+  border-bottom-right-radius: 10px;
+}
+.isGroup.left>div{
+  margin-left:1px;
+  border-left-width:2.5px;
+}
+.isGroup.right>div{
+  margin-right:1px;
+  border-right-width:2.5px;
+}
+.isGroup.up>div{
+  margin-top:1px;
+  border-top-width:2.5px;
+}
+.isGroup.down>div{
+  margin-bottom:1px;
+  border-bottom-width:2.5px;
+}
+/* .noGroup{
+  border-color : #ddd;
+}
+.dark .noGroup{
+  border-color : #222;
+} */
+.tile.moving>div{
+  border-radius: 25%;
 }
