@@ -28,6 +28,12 @@ body.dark{
   border: 1px solid gray;
 }
 
+#gameOptions{
+  position: fixed;
+  height: 0;
+  top: 33%;
+  margin: auto;
+}
 .dark .hole, .dark .hero-unit{
   background-color: #222;
 }
