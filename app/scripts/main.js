@@ -97,11 +97,8 @@ Tile.prototype = {
 				tile.neighbors[tile.neighbors.indexOf(this)] = null;
 			this.neighbors[i] = null;
 		}
-		//this.el.removeClass('up down left right isGroup almostGroup noGroup');
-		//this.el.addClass('tile');
-		//if(this.isHole)
-			//this.el.addClass('hole');
-		this.el.addClass("moving")
+		this.el.removeClass('up down left right isGroup almostGroup noGroup', 250);
+		this.el.addClass("moving", 250)
 		return this.el.animate({
 				top: 5 + _y * 100 + 'px',
 				left: 5 + _x * 100 + 'px'
@@ -522,13 +519,13 @@ Tile.Update = function() {
 	}*/
 	while(Tile.allDirtyClasses.length){
 		tile = Tile.allDirtyClasses.shift();
-		if(tile.dirtyClass){
+		if(!tile.moving && tile.dirtyClass){
 			tile.el.removeClass('up down left right isGroup almostGroup noGroup');
 			if(!tile.moving)
 				tile.el.removeClass('moving');
 
 			tile.dirtyClass = false;
-			tile.el.addClass(tile.class.join(' '))
+			tile.el.addClass(tile.class.join(' '), 500)
 			requestAnimationFrame(Tile.Update);
 			return;
 		}
