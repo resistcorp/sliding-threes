@@ -148,8 +148,8 @@ body.dark{
 .dark .down>div{
 } */
 .almostGroup>div{
-  border-radius: 3px;
-  margin:1.5px;
+  border-radius: 2px;
+  margin:1.0px;
 }
 .dark .almostGroup>div{
   border-color : #222;
