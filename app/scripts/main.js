@@ -1,12 +1,15 @@
 $(function() {
 	console.log('go');
 	var container = $('#gameContainer'),
-		width = 10, height = 10;
+		width = 8, height = 8;
+	TweenMax.defaultOverwrite = "all";
 	Tile.Init(container,width,height)
 	$("#dirCheck").on("change", Tile.swapDirs)
 	$("#darkCheck").on("change", function() {
 		$(document.body).toggleClass('dark', {dureation : 1000, easing : "easeOutSine", children: true})
-	})
+	});
+	$(window).on('resize', $.debounce(500, Tile.resize));
+	Tile.resize();
 })
 function Tile () {
 	this.dirtyClass = ["true"]
@@ -35,6 +38,7 @@ Tile.prototype = {
 		}
 		this.placeAt(_x, _y, true);
 		this.dirty();
+		//this.el.addClass(this.class.join(' '));
 		return this;
 	},
 	dirty: function() {
@@ -86,7 +90,7 @@ Tile.prototype = {
 	moveTo : function(_x, _y) {
 		this.x = _x;
 		this.y = _y;
-		var up = this.arrive.bind(this);
+		//var up = this.arrive.bind(this);
 		if(Tile.moving.indexOf(this) == -1)
 			Tile.moving.push(this);
 		this.dirty();
@@ -97,14 +101,19 @@ Tile.prototype = {
 				tile.neighbors[tile.neighbors.indexOf(this)] = null;
 			this.neighbors[i] = null;
 		}
-		this.el.removeClass('up down left right isGroup almostGroup noGroup', 250);
-		this.el.addClass("moving", 250)
-		return this.el.animate({
+		//this.el.stop();
+		this.removeClass('up down left right isGroup almostGroup noGroup', 250);
+		//this.el.addClass( this.class.join(' ') + " moving")
+		return TweenMax.to(
+			this.el, .5,
+			{
 				top: 5 + _y * 100 + 'px',
-				left: 5 + _x * 100 + 'px'
-			}, {
-				duration : 500,
-				complete : up
+				left: 5 + _x * 100 + 'px',
+				//duration : 500,
+				className : this.class.join(' ') + " moving",
+				onComplete : this.arrive,
+				onCompleteScope : this,
+				overwrite : "all"
 			});
 	},
 	placeAt: function(_x, _y, _noUpdate) {
@@ -245,8 +254,8 @@ Tile.prototype = {
 Tile.numColors = 6;
 Tile.DIRS = ["right","up","left","down"];
 
-Tile.width = 10;
-Tile.height = 10;
+Tile.width = 8;
+Tile.height = 8;
 Tile.all = [];
 Tile.pool = [];
 Tile.groups = [];
@@ -254,6 +263,7 @@ Tile.arrayPool = [];
 Tile.moving = [];
 Tile.dirties = [];
 Tile.allDirtyClasses = [];
+Tile.threshold = 4;
 const 	left = 0,
 		down = 1,
 		right = 2,
@@ -401,7 +411,8 @@ Tile.Init = function(_container, _w, _h) {
 	for(var i= 0; i < _w; ++i) {
 		Tile.cols[i] = [];
 		for(var j= 0; j < _h; ++j) {
-			if(i == 0)
+			//one!
+			if(i==0)
 				Tile.rows[j] = [];
 			avoid1 = avoid2 = -1;
 			if(remove == (_w * j + i)) {
@@ -431,12 +442,34 @@ Tile.Init = function(_container, _w, _h) {
 			Tile.all.push(tile);
 		}
 	}
-	for(tile of Tile.all) tile.update()
+	for(tile of Tile.all) tile.update();
+		Tile.container = _container;
+	Tile.containerWidth = (_w * 100 + 8);
+	Tile.containerHeight = (_h * 100 + 8);
 	_container.css({
-		width : (_w * 100 + 8) + 'px',
-		height : (_h * 100 + 8) + 'px'
+		width : Tile.containerWidth + 'px',
+		height : Tile.containerHeight + 'px'
 	})
 	Tile.Update();
+}
+Tile.resize = function(){
+	var w = $(window).width() * .95,
+		h = $(window).height() * .95,
+		c = Tile.container,
+		m = Tile.container.css('margin').replace(/px/g, "").split(' ').map(x=>+x);
+
+	if(m[1] === undefined)
+		m[1] = m[0]
+	if(m[2] === undefined)
+		m[2] = m[0]
+	if(m[3] === undefined)
+		m[3] = m[1]
+	var wRatio = w / (Tile.containerWidth + m[1] + m[3]),
+		hRatio = h / (Tile.containerHeight + m[0] + m[2]);
+	TweenMax.to(Tile.container, .5, {scale: Math.min(wRatio, hRatio)});
+}
+Tile.sortByClass = function(_a, _b) {
+	return _a.el.prop('class').length - _b.el.prop('class').length;
 }
 Tile.Update = function() {
 	var tile, tile2, list, totest, group;
@@ -446,14 +479,20 @@ Tile.Update = function() {
 	Tile.releaseArray(Tile.dirties);
 	Tile.dirties = Tile.moving.concat();
 	for(group of Tile.groups) {
-		if(group.dirty)
+		if(group.dirty){
 			group.dirty = false;
+			totest = true;
+			if(group.length >= Tile.threshold){
+				group.sort(Tile.sortByClass);
+			}
 			for(tile of group){
-				if( group.length > 3){
+				if( group.length >= Tile.threshold){
 					tile.removeClass('almostGroup noGroup');
 					tile.addClass('isGroup');
-					if(tile.child.text() == "")
+					if(totest && tile.child.text() == ""){
+						totest = false;
 						tile.setText(group.length);
+					}
 				}else if( group.length > 1){
 					tile.removeClass('isGroup noGroup');
 					tile.addClass('almostGroup');
@@ -462,74 +501,25 @@ Tile.Update = function() {
 					tile.addClass('noGroup')	
 				}
 			}
-	}
-	/*list = Tile.all.concat();
-	totest = [];
-	while(list.length > 0) {
-		tile = list.pop();
-		totest.push(tile);
-		var group = [tile];
-		var col = tile.color;
-		tile.removeClass("isGroup left right up down");
-		while(totest.length > 0) {
-			tile = totest.pop();
-			tile2 = tile.neighbors[up];
-			if(tile2 && tile2.tileColor == col) {
-				if(list.indexOf(tile2) != -1) {
-					list.splice(list.indexOf(tile2), 1)
-					totest.push(tile2)
-					group.push(tile2)
-				}else{
-					tile.addClass('up')
-				}
-			}
-			tile2 = tile.neighbors[down];
-			if(tile2 && tile2.tileColor == col) {
-				if(list.indexOf(tile2) != -1) {
-					list.splice(list.indexOf(tile2), 1)
-					totest.push(tile2)
-					group.push(tile2)
-				}else{
-					tile.addClass('down')
-				}
-			}
-			tile2 = tile.neighbors[down];
-			if(list.indexOf(tile2) != -1) {
-				list.splice(list.indexOf(tile2), 1)
-				if(tile2 && tile2.tileColor == col) {
-					totest.push(tile2)
-					group.push(tile2)
-				}else{
-					tile.addClass('right')
-				}
-			}
-			tile2 = tile.neighbors[down];
-			if(list.indexOf(tile2) != -1) {
-				list.splice(list.indexOf(tile2), 1)
-				if(tile2 && tile2.tileColor == col) {
-					totest.push(tile2)
-					group.push(tile2)
-				}else{
-					tile.addClass('left')
-				}
-			}
-		}
-		if(group.length > 3)
-			for(tile of group) tile.el.addClass('isGroup')
-	}*/
-	while(Tile.allDirtyClasses.length){
-		tile = Tile.allDirtyClasses.shift();
-		if(!tile.moving && tile.dirtyClass){
-			tile.el.removeClass('up down left right isGroup almostGroup noGroup', 500);
-			if(!tile.moving)
-				tile.el.removeClass('moving');
-
-			tile.dirtyClass = false;
-			tile.el.addClass(tile.class.join(' '), 500)
-			requestAnimationFrame(Tile.Update);
-			return;
 		}
 	}
 	requestAnimationFrame(Tile.Update);
+	while(Tile.allDirtyClasses.length){
+		if(new Date().getTime() > start + 25){
+			return;
+		}
+		tile = Tile.allDirtyClasses.shift();
+		if(!tile.moving && tile.dirtyClass){
+			TweenMax.to(
+				tile.el, .5,
+				{
+					className: tile.class.join(' ')
+				}
+			);
+			tile.dirtyClass = false;
+			/*requestAnimationFrame(Tile.Update);
+			return;*/
+		}
+	}
 }
 Tile.swapDirs(false)
