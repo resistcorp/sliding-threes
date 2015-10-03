@@ -1,7 +1,7 @@
 $(function() {
 	console.log('go');
 	var container = $('#gameContainer'),
-		width = 8, height = 8;
+		width = 2, height = 1;
 	TweenMax.defaultOverwrite = "all";
 	Tile.Init(container,width,height)
 	$("#dirCheck").on("change", Tile.swapDirs)
@@ -32,8 +32,8 @@ Tile.prototype = {
 			this.isHole = true;
 			Tile.hole = this;
 		}else{
-			this.tileColor = Tile.getRandColor(_avoid1, _avoid2);
-			this.addClass('color'+this.tileColor);
+			this.tileColor = 'color'+Tile.getRandColor(_avoid1, _avoid2);
+			this.addClass(this.tileColor);
 			this.isHole = false;
 		}
 		this.placeAt(_x, _y, true);
@@ -62,18 +62,22 @@ Tile.prototype = {
 		}
 		return this;
 	},
-	removeClass: function(_str, _time) {
-		var str, index;
-		for(str of _str.split(" ")){
+	removeClass: function() {
+		var str, index, list = arguments;
+		if(Array.isArray(list[0]))
+			list = list[0];
+		for(str of list){
 			index = this.class.indexOf(str);
 			if(index != -1){
 				this.class.splice(index, 1);
 			}
 		}
 	},
-	addClass: function(_str, _time) {
-		var l = this.class.length;
-		for(var str of _str.split(" "))
+	addClass: function() {
+		var str, list = arguments;
+		if(Array.isArray(list[0]))
+			list = list[0];
+		for(str of list)
 			if(str != "" && this.class.indexOf(str) == -1)
 				this.class.push(str);
 	},
@@ -81,11 +85,13 @@ Tile.prototype = {
 		this.child.text(_str);
 	},
 	release : function() {
-		if(Tile.pool.indexOf(this) == -1)
-			Tile.pool.push(this);
 		var index = Tile.all.indexOf(this);
 		if(index != -1)
 			Tile.all.splice(index, 1);
+		this.tileColor = -1;
+		this.class.length = 0;
+		this.neighbors = 0;
+		return TweenMax.to(this.el, .5, {className: 'tile dead ' + this.tileColor}, {onComplete: Tile.giveUp, onCompleteParams: [this]});
 	},
 	moveTo : function(_x, _y) {
 		this.x = _x;
@@ -102,8 +108,8 @@ Tile.prototype = {
 			this.neighbors[i] = null;
 		}
 		//this.el.stop();
-		this.removeClass('up down left right isGroup almostGroup noGroup', 250);
-		//this.el.addClass( this.class.join(' ') + " moving")
+		this.removeClass('up', 'down', 'left', 'right', 'isGroup', 'almostGroup', 'noGroup');
+		//this.el.addClass(this.class.join(' ') + " moving")
 		return TweenMax.to(
 			this.el, .5,
 			{
@@ -150,7 +156,7 @@ Tile.prototype = {
 			y = this.y,
 			moves = this.moveList,
 			groups = Tile.giveMeAnArray(),
-			classes = "up left right down",
+			classes = Tile.giveMeAnArray(),
 			remClasses = [],
 			text = "", neighbor;
 		this.moveList.length = 0;
@@ -163,12 +169,13 @@ Tile.prototype = {
 				text = Tile.DIRS[0];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
+				classes.push("right");
 			}else if(neighbor.tileColor == this.tileColor){
-				classes = classes.replace("right", "");
 				remClasses.push("right");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
-			}
+			}else
+				classes.push("right");
 		}
 		if(y > 0) {
 			neighbor = Tile.get(x, y -1);
@@ -178,12 +185,13 @@ Tile.prototype = {
 				text = Tile.DIRS[1];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
+				classes.push("up");
 			}else if(neighbor.tileColor == this.tileColor){
-				classes = classes.replace("up", "");
 				remClasses.push("up");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
-			}
+			}else
+				classes.push("up");
 		}
 		if(x > 0) {
 			neighbor = Tile.get(x -1, y);
@@ -193,12 +201,13 @@ Tile.prototype = {
 				text = Tile.DIRS[2];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
+				classes.push("left");
 			}else if(neighbor.tileColor == this.tileColor){
-				classes = classes.replace("left", "");
 				remClasses.push("left");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
-			}
+			}else
+				classes.push("left");
 		}
 		if(y < Tile.height -1) {
 			neighbor = Tile.get(x, y +1);
@@ -208,14 +217,15 @@ Tile.prototype = {
 				text = Tile.DIRS[3];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
+				classes.push("down");
 			}else if(neighbor.tileColor == this.tileColor){
-				classes = classes.replace("down", "");
 				remClasses.push("down");
 				if(!neighbor.isDirty) 
 					groups.push(neighbor.group);
-			}
+			}else
+				classes.push("down");
 		}
-		this.removeClass(remClasses.join(' '));
+		this.removeClass(remClasses);
 		this.addClass(classes);
 		this.group = groups.length? groups[0] : [];
 		if(this.group.indexOf(this) == -1)
@@ -240,6 +250,7 @@ Tile.prototype = {
 		this.setText(text);
 		this.isDirty = false;
 		Tile.releaseArray(remClasses);
+		Tile.releaseArray(classes);
 		Tile.releaseArray(groups);
 		group = this.class.join(' ');
 		neighbor = this.el.prop('class');
@@ -272,6 +283,9 @@ Tile.get = function(_x,_y) {
 	if(_x >= Tile.width || _x < 0 )
 		return null;
 	return Tile.cols[_x][_y];
+}
+Tile.factory = function() {
+		return Tile.pool.pop() || new Tile();
 }
 Tile.giveMeAnArray = function() {
 	if(Tile.arrayPool.length)
@@ -376,12 +390,34 @@ Tile.swap = function(_tile1, _tile2) {
 	for(tile of _tile1.neighbors)
 		tile && tile.dirty();*/
 }
+Tile.giveUp = function(_tile){
+	if(Tile.pool.indexOf(tile) == -1)
+		Tile.pool.push(tile);
+	Tile.tileColor = -1;
+	Tile.el.detach();
+}
+Tile.releaseAll = function(){
+	var array = Tile.giveMeAnArray(),
+		st = 1 / Tile.all.length,
+		i;
+	while(Tile.all.length > 0){
+		i = (Math.random() * Tile.all.length) >> 0;
+		var tile = Tile.all[i];
+		tile.setText('');
+		Tile.all.splice(i, 1)
+		array.push(tile.release());
+	}
+	var tl = new TimelineLite({tweens : array, stagger : st});
+	Tile.releaseArray(array);
+	return tl
+}
 Tile.Init = function(_container, _w, _h) {
 	var avoid1, avoid2, tile;
 	_w = _w || Tile.width
 	_h = _h || Tile.height
 	Tile.width = _w;
 	Tile.height = _h;
+	Tile.resize();
 	_container = _container || $('#gameContainer')
 	$(document.body).on("keydown", function( event ) {
 			switch(event.keyCode) {
@@ -451,12 +487,13 @@ Tile.Init = function(_container, _w, _h) {
 		height : Tile.containerHeight + 'px'
 	})
 	Tile.Update();
+	Tile.resize();
 }
 Tile.resize = function(){
 	var w = $(window).width() * .95,
 		h = $(window).height() * .95,
-		c = Tile.container,
-		m = Tile.container.css('margin').replace(/px/g, "").split(' ').map(x=>+x);
+		c = $('#gameSpacer'),
+		m = c.css('margin').replace(/px/g, "").split(' ').map(x=>+x);
 
 	if(m[1] === undefined)
 		m[1] = m[0]
@@ -466,10 +503,16 @@ Tile.resize = function(){
 		m[3] = m[1]
 	var wRatio = w / (Tile.containerWidth + m[1] + m[3]),
 		hRatio = h / (Tile.containerHeight + m[0] + m[2]);
-	TweenMax.to(Tile.container, .5, {scale: Math.min(wRatio, hRatio)});
+	TweenMax.to(c, .5, {scale: Math.min(wRatio, hRatio)});
 }
 Tile.sortByClass = function(_a, _b) {
 	return _a.el.prop('class').length - _b.el.prop('class').length;
+}
+Tile.randomInit = function() {
+	var w = 2+Math.random() * 17,
+		h = 2+Math.random() * 17,
+		tl = Tile.releaseAll();
+	tl.eventCallback("onComplete", Tile.Init, [$('#gameContainer'), w>>0, h>>0]);
 }
 Tile.Update = function() {
 	var tile, tile2, list, totest, group;
