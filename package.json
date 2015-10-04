@@ -20,14 +20,15 @@
     "grunt-mocha": "^0.4.12",
     "grunt-modernizr": "^0.6.0",
     "grunt-newer": "^1.1.0",
-    "grunt-postcss": "^0.5.3",
+    "grunt-postcss": "^0.6.0",
     "grunt-serve": "^0.1.6",
     "grunt-svgmin": "^2.0.1",
+    "grunt-text-replace": "^0.4.0",
     "grunt-usemin": "^3.0.0",
     "grunt-wiredep": "^2.0.0",
     "grunt-wiredep-copy": ">=0.1.0",
     "jit-grunt": "^0.9.1",
-    "grunt-text-replace": "^0.4.0",
+    "pixrem": "^3.0.0",
     "time-grunt": "^1.1.0"
   },
   "engines": {

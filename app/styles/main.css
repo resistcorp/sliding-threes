@@ -73,12 +73,6 @@ body.dark{
   cursor: hand;
   /*transform: translate-Z(0);*/
 }
-.tile.dead{
-  width: 0;
-  height: 0;
-  transform: rotate(359deg);
-  transform-origin: center;
-}
 .tile>div{
   border-radius: 6px;
   padding-top: 30px;
@@ -91,9 +85,17 @@ body.dark{
   bottom: 0;
   left: 0;
   right: 0;
+  transform-origin: center center;
 }
 .dark .tile{
   border-color: #222
+}
+.almostGroup>div{
+  border-radius: 2px;
+  margin:1.0px;
+}
+.dark .tile.almostGroup>div{
+  border-color : #222;
 }
 .hole{
   z-index: 1;
@@ -163,13 +165,6 @@ body.dark{
 }
 .dark .down>div{
 } */
-.almostGroup>div{
-  border-radius: 2px;
-  margin:1.0px;
-}
-.dark .almostGroup>div{
-  border-color : #222;
-}
 .almostGroup.up.left>div{
   border-top-left-radius: 6px;
 }
@@ -233,6 +228,17 @@ body.dark{
 .dark .noGroup{
   border-color : #222;
 } */
+.tile.dead>div{
+  width: 0;
+  height: 0;
+  transform: rotate(359deg);
+  background-color: #ddd
+  border: 0px solid #ddd;
+}
+.dark .tile.dead>div{
+  background-color: #222
+  border: 0px solid #222;
+}
 .tile.moving>div{
   border-radius: 25%;
 }

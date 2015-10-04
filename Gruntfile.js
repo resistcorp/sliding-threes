@@ -7,6 +7,11 @@ module.exports = function(grunt) {
   require('jit-grunt')(grunt, {
       useminPrepare: 'grunt-usemin'
   });
+  // load the tasks
+  grunt.loadNpmTasks('grunt-contrib-copy');
+  grunt.loadNpmTasks('grunt-contrib-clean');
+  grunt.loadNpmTasks('grunt-text-replace');
+  grunt.loadNpmTasks('grunt-postcss');
 
   // Configurable paths
   var config = {
@@ -75,6 +80,27 @@ module.exports = function(grunt) {
         }
       }
     },
+    postcss: {
+      options: {
+        map: true,
+        processors: [
+        require('pixrem')(), // add fallbacks for rem units
+          // Add vendor prefixed styles
+          require('autoprefixer')({
+            browsers: ['> 1%', 'last 2 versions', 'Firefox ESR', 'Opera 12.1']
+          })
+        ]
+      },
+      dist: {
+        files: [{
+          expand: true,
+          cwd: 'dist/styles/',
+          src: '{,*/}*.css',
+          dest: 'dist/styles/'
+        }]
+      }
+    },
+
     replace: {
       afterWire: {
         src: ['app/index.html'],
@@ -145,14 +171,6 @@ module.exports = function(grunt) {
         }
       }
     },
-    autoprefixer: {
-      build: {
-        expand: true,
-        cwd: 'dist',
-        src: [ '**/*.css' ],
-        dest: 'dist'
-      }
-    },
     clean: {
       dist: {
         files: [{
@@ -175,11 +193,6 @@ module.exports = function(grunt) {
 
   });
 
-  // load the tasks
-  grunt.loadNpmTasks('grunt-contrib-copy');
-  grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-autoprefixer');
-  grunt.loadNpmTasks('grunt-text-replace');
 
   // define the tasks
   grunt.registerTask('serve', 'start the server and preview your app', function (target) {
@@ -199,7 +212,12 @@ module.exports = function(grunt) {
   grunt.registerTask(
     'build', 
     'Compiles all of the assets and copies the files to the build directory.', 
-    [ 'clean', 'autoprefixer', 'wiredepCopy', 'replace:afterWire', 'copy' ]
+    [ 
+      'clean',
+      'wiredepCopy',
+      'replace:afterWire',
+      'copy',
+      'postcss:dist' ]
   );
   grunt.registerTask(
     'publish', 
