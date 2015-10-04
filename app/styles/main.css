@@ -12,14 +12,6 @@ body.dark{
 }
 
 .hero-unit {
-  margin: 50px auto 50px auto;
-  width: 300px;
-  font-size: 18px;
-  font-weight: 200;
-  line-height: 30px;
-  border-radius: 6px;
-  transform: scale(0.8);
-  transform-origin: top;
 }
 .hole, .hero-unit{
   background-color: #ddd;
@@ -28,13 +20,34 @@ body.dark{
   border: 1px solid gray;
 }
 
+#gameContainer{
+  width: 300px;
+  font-size: 18px;
+  font-weight: 200;
+  line-height: 30px;
+  border-radius: 6px;
+  transform: translate(-50%, -50%);
+  position: relative;
+}
+#gameSpacer{
+  position: absolute;
+  width: 0;
+  height: 0;
+  top: 50%;
+  left: 50%;
+}
 #gameOptions{
   position: fixed;
-  height: 0;
-  top: 33%;
+  height: 50%;
+  top: 25%;
   margin: auto;
+  vertical-align: middle;
+  background-color: #ddd;
+  margin-left: -25px;
+  padding: 10px 25px;
+  border-radius: 0 10px 10px 0
 }
-.dark .hole, .dark .hero-unit{
+.dark .hole, .dark .hero-unit, .dark .hero-form{
   background-color: #222;
 }
 
@@ -42,10 +55,6 @@ body.dark{
   font-size: 60px;
   line-height: 1;
   letter-spacing: -1px;
-}
-
-#gameContainer{
-  position: relative;
 }
 
 .browsehappy {
@@ -62,6 +71,7 @@ body.dark{
   z-index: 10;
   cursor: pointer;
   cursor: hand;
+  /*transform: translate-Z(0);*/
 }
 .tile>div{
   border-radius: 6px;
@@ -75,9 +85,17 @@ body.dark{
   bottom: 0;
   left: 0;
   right: 0;
+  transform-origin: center center;
 }
 .dark .tile{
   border-color: #222
+}
+.almostGroup>div{
+  border-radius: 2px;
+  margin:1.0px;
+}
+.dark .tile.almostGroup>div{
+  border-color : #222;
 }
 .hole{
   z-index: 1;
@@ -147,13 +165,6 @@ body.dark{
 }
 .dark .down>div{
 } */
-.almostGroup>div{
-  border-radius: 2px;
-  margin:1.0px;
-}
-.dark .almostGroup>div{
-  border-color : #222;
-}
 .almostGroup.up.left>div{
   border-top-left-radius: 6px;
 }
@@ -217,6 +228,17 @@ body.dark{
 .dark .noGroup{
   border-color : #222;
 } */
+.tile.dead>div{
+  width: 0;
+  height: 0;
+  transform: rotate(359deg);
+  background-color: #ddd
+  border: 0px solid #ddd;
+}
+.dark .tile.dead>div{
+  background-color: #222
+  border: 0px solid #222;
+}
 .tile.moving>div{
   border-radius: 25%;
 }

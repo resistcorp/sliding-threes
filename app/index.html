@@ -21,7 +21,7 @@
     <!-- endbuild -->
     <!-- bower:js -->
     <script src="lib/jquery/dist/jquery.js"></script>
-    <script src="lib/jquery-ui/jquery-ui.js"></script>
+    <script src="lib/underscore/underscore.js"></script>
     <!-- endbower -->
     <!-- build:js scripts/main.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.18.0/TweenMax.min.js"></script>
@@ -36,13 +36,16 @@
     <![endif]-->
 
     
-    <div class="hero-unit" id="gameContainer"></div>
+    <div id="gameSpacer">
+      <div id="gameContainer" class="hero-unit"></div>
+    </div>
     <div class="hero-form" id="gameOptions">
         <input type="checkbox" name="dirCheck" id="dirCheck">
         <label for="dirCheck">Invert Directions</label>
         <br />
         <input type="checkbox" name="darkCheck" id="darkCheck" checked="checked">
         <label for="darkCheck">Dark theme</label>
+        <button onclick="Tile.randomInit();">random sizes</button>
     </div>
     
     
