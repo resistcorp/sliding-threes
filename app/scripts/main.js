@@ -1,20 +1,63 @@
 $(function() {
 	console.log('go');
 	var container = $('#gameContainer'),
-		width = 1, height = 1;
+		width = 7, height = 7;
 	TweenMax.defaultOverwrite = "all";
-	Tile.Init(container,width,height)
+	Tile.Init(
+		{
+			container: container,
+			w: width,
+			h: height
+		}
+	);
+	$("#widthInput").on("blur", Tile.checkSizes);
+	$("#heightInput").on("blur", Tile.checkSizes);
+	$("#colorsInput").on("blur", Tile.checkSizes);
 	$("#dirCheck").on("change", Tile.swapDirs)
 	$("#darkCheck").on("change", function() {
-		$(document.body).toggleClass('dark', {dureation : 1000, easing : "easeOutSine", children: true})
+		if($(document.body).hasClass('dark'))
+			TweenMax.to($(document.body), 2.5, {className : ''});
+		else
+			TweenMax.to($(document.body), 2.5, {className : 'dark'});
 	});
 	$(window).on('resize', $.debounce(500, Tile.resize));
+	$(document.body).on("keydown", function( event ) {
+		if(Tile.hole){
+			switch(event.keyCode) {
+				case 37:
+					Tile.applyMoves(Tile.invertedDirs? 'left' : 'right');
+					break;
+				case 38:
+					Tile.applyMoves(Tile.invertedDirs? 'up' : 'down');
+					break;
+				case 39:
+					Tile.applyMoves(Tile.invertedDirs? 'right' : 'left');
+					break;
+				case 40:
+					Tile.applyMoves(Tile.invertedDirs? 'down' : 'up');
+					break;
+			}
+		}
+	})
+	$('#openIcon, #closeIcon').on("click", function( event ) {
+		$('#gameOptions').toggleClass('hide')
+		/*if($('#gameOptions').hasClass('show'))
+			TweenMax.to($('#gameOptions'), .5, {className : 'hide'});
+		else
+			TweenMax.to($('#gameOptions'), .5, {className : 'show'});*/
+	});
+	container.on("click", ".tile", function( event ) {
+			var tile = $(this).data('tile');
+			console.log( tile.tileColor, tile.moveList );
+			Tile.applyMoves(tile.moveList)
+			event.stopPropagation();
+		})
 	Tile.resize();
 })
 function Tile () {
 	this.dirtyClass = ["true"]
-	this.el = $('<div class="tile dead" />');
-	this.child = $('<div />')
+	this.el = $('<div class="tile" />');
+	this.child = $('<div class="dead" />')
 	this.el.append(this.child);
 	this.el.data('tile', this);
 }
@@ -31,17 +74,19 @@ Tile.prototype = {
 			this.isHole = true;
 			Tile.hole = this;
 		}else{
-			this.tileColor = 'color'+Tile.getRandColor(_avoid1, _avoid2);
-			this.addClass(this.tileColor);
+			this.tileColor = Tile.getRandColor(_avoid1, _avoid2);
 			this.isHole = false;
 		}
+		this.classColor = 'color'+this.tileColor;
+		this.addClass(this.classColor);
 		this.placeAt(_x, _y, true);
 		this.dirty();
-		this.el.addClass("tile dead");
+		this.el.prop('class',this.class.join(' '));
+		this.child.prop('class', "dead");
 		return TweenMax.to(
-				this.el, .5,
+				this.child, .5,
 				{
-					className: this.class.join(' ')
+					className: ""
 				}
 			);
 ;
@@ -52,17 +97,19 @@ Tile.prototype = {
 			var index = Tile.dirties.indexOf(this);
 			if(index == -1)
 				Tile.dirties.push(this);
-			if(this.group)
-				while(this.group.length){
-					var tile = this.group.pop();
-					if(tile !== this)
+			if(this.group){
+				for(var tile of this.group){
+					if(tile !== this){
 						tile.group = null;
-					tile.dirty();
+						tile.dirty();
+					}
 				}
-			index = Tile.groups.indexOf(this.group);
-			if(index != -1)
-				Tile.groups.splice(index, 1);
-			this.group = null;
+				index = Tile.groups.indexOf(this.group);
+				if(index != -1)
+					Tile.groups.splice(index, 1);
+				Tile.releaseArray(this.group)
+				this.group = null;
+			}
 			this.setText('');
 		}
 		return this;
@@ -96,13 +143,19 @@ Tile.prototype = {
 		this.tileColor = -1;
 		this.class.length = 0;
 		this.neighbors = 0;
-		Tile.releaseArray(this.neighbors);
+		index = Tile.groups.indexOf(this.group);
+		if(index != -1)
+			Tile.groups.splice(index, 1);
+		Tile.releaseArray(this.group);
 		Tile.releaseArray(this.moveList);
+		Tile.releaseArray(this.neighbors);
 		this.group = null;
+		this.moveList = null;
+		this.neighbors = null;
 		return TweenMax.to(
-			this.el, .5,
+			this.child, .5,
 			{
-				className: 'tile dead',
+				className: 'dead',
 				onComplete: Tile.giveUp,
 				onCompleteParams: [this]
 			}
@@ -176,6 +229,8 @@ Tile.prototype = {
 			text = "", neighbor;
 		this.moveList.length = 0;
 		this.neighbors.length = 0;
+		if(this.group)
+			groups.push(this.group);
 		if(x < Tile.width -1) {
 			neighbor = Tile.get(x +1, y);
 			this.neighbors[2] = neighbor;
@@ -187,7 +242,7 @@ Tile.prototype = {
 				classes.push("right");
 			}else if(neighbor.tileColor == this.tileColor){
 				remClasses.push("right");
-				if(!neighbor.isDirty) 
+				if(!neighbor.isDirty && groups.indexOf(neighbor.group) == -1) 
 					groups.push(neighbor.group);
 			}else
 				classes.push("right");
@@ -205,7 +260,7 @@ Tile.prototype = {
 				classes.push("up");
 			}else if(neighbor.tileColor == this.tileColor){
 				remClasses.push("up");
-				if(!neighbor.isDirty) 
+				if(!neighbor.isDirty && groups.indexOf(neighbor.group) == -1) 
 					groups.push(neighbor.group);
 			}else
 				classes.push("up");
@@ -223,7 +278,7 @@ Tile.prototype = {
 				classes.push("left");
 			}else if(neighbor.tileColor == this.tileColor){
 				remClasses.push("left");
-				if(!neighbor.isDirty) 
+				if(!neighbor.isDirty && groups.indexOf(neighbor.group) == -1) 
 					groups.push(neighbor.group);
 			}else
 				classes.push("left");
@@ -241,7 +296,7 @@ Tile.prototype = {
 				classes.push("down");
 			}else if(neighbor.tileColor == this.tileColor){
 				remClasses.push("down");
-				if(!neighbor.isDirty) 
+				if(!neighbor.isDirty && groups.indexOf(neighbor.group) == -1) 
 					groups.push(neighbor.group);
 			}else
 				classes.push("down");
@@ -257,18 +312,18 @@ Tile.prototype = {
 			var group = groups.pop();
 			if(group != this.group && groups.indexOf(group) == -1) {//treat each one, once
 				for(var tile of group)
-					if(this.group.indexOf(tile) == -1)
+					if(this.group.indexOf(tile) == -1){
 						this.group.push(tile);
+						tile.group = this.group;
+					}
 				var index = Tile.groups.indexOf(group);
 				if(index != -1)
 					Tile.groups.splice(index, 1);
 				Tile.releaseArray(group);
 			}
 		}
-		for(var tile of this.group){
-			tile.group = this.group;
-		}
-		Tile.groups.push(this.group);
+		if(Tile.groups.indexOf(this.group) == -1)
+			Tile.groups.push(this.group);
 		this.group.dirty = true;
 		this.setText(text);
 		this.isDirty = false;
@@ -285,6 +340,7 @@ Tile.prototype = {
 	}
 };
 //Tile.COLORS = ["#F00", "#0F0", "#00F", "#FF0", "#0FF", "#F0F"];
+Tile.NUM_COLORS = 6;
 Tile.numColors = 6;
 Tile.DIRS = ["right","up","left","down"];
 const 	left = 0,
@@ -339,6 +395,7 @@ Tile.applyMoves = function(_move) {
 	var tile = Tile.hole.neighbors[move];
 	if(tile)
 		Tile.swap(tile, Tile.hole);
+	Tile.moves++;
 }
 Tile.swap = function(_tile1, _tile2) {
 	var x = _tile2.x,
@@ -356,6 +413,7 @@ Tile.giveUp = function(_tile){
 	_tile.el.detach();
 	Tile.tileColor = -1;
 	Tile.releaseArray(_tile.class);
+	_tile.class = null;
 	if(Tile.pool.indexOf(_tile) == -1)
 		Tile.pool.push(_tile);
 }
@@ -379,57 +437,44 @@ Tile.releaseAll = function(){
 	Tile.releaseArray(Tile.groups);
 	Tile.releaseArray(Tile.dirties);
 	Tile.releaseArray(Tile.allDirtyClasses);
-	Tile.groups = Tile.giveMeAnArray();
+	Tile.groups = [];
 	Tile.dirties = Tile.giveMeAnArray();
 	Tile.allDirtyClasses = Tile.giveMeAnArray();
 	return tl
 }
-Tile.Init = function(_container, _w, _h) {
-	var avoid1, avoid2, tile;
-	_w = _w || Tile.width
-	_h = _h || Tile.height
-	Tile.width = _w;
-	Tile.height = _h;
+Tile.Init = function(_options) {
+	var avoid1, avoid2, tile, container,
+		options = _options ||{},
+		w = options.w || Tile.width,
+		h = options.h || Tile.height;
+	Tile.width = w;
+	Tile.height = h;
 	Tile.resize();
-	_container = _container || $('#gameContainer')
-	$(document.body).on("keydown", function( event ) {
-			switch(event.keyCode) {
-				case 37:
-					Tile.applyMoves(Tile.invertedDirs? 'left' : 'right');
-					break;
-				case 38:
-					Tile.applyMoves(Tile.invertedDirs? 'up' : 'down');
-					break;
-				case 39:
-					Tile.applyMoves(Tile.invertedDirs? 'right' : 'left');
-					break;
-				case 40:
-					Tile.applyMoves(Tile.invertedDirs? 'down' : 'up');
-					break;
-			}
-		})
-	_container.on("click", ".tile", function( event ) {
-			var tile = $(this).data('tile');
-			console.log( tile.tileColor, tile.moveList );
-			Tile.applyMoves(tile.moveList)
-			event.stopPropagation();
-		})
+	container = options.container || $('#gameContainer')
 	Tile.cols = Tile.giveMeAnArray();
 	Tile.rows = Tile.giveMeAnArray();
-	var remove = Math.floor(Math.random() * _w * _h),
-		arr = Tile.giveMeAnArray();
-	if (_w == 1 && _h == 1){
-		remove = 2;
-		Tile.hole = Tile.factory();
+	Tile.numColors = options.numColors ||Tile.NUM_COLORS
+	var colors = Array();
+	for(var i= 0; i < Tile.numColors; i++){
+		colors[i] = false;
 	}
-	for(var i= 0; i < _w; ++i) {
+	var remove = Math.floor(Math.random() * w * h),
+		arr = Tile.giveMeAnArray();
+	if (w == 1 && h == 1){
+		remove = 2;
+		Tile.isPlaying = false;
+	}else{
+		Tile.hole = null;
+		Tile.isPlaying = true;
+	}
+	for(var i= 0; i < w; ++i) {
 		Tile.cols[i] = Tile.giveMeAnArray();
-		for(var j= 0; j < _h; ++j) {
+		for(var j= 0; j < h; ++j) {
 			//one!
 			if(i==0)
 				Tile.rows[j] = Tile.giveMeAnArray();
 			avoid1 = avoid2 = -1;
-			if(remove == (_w * j + i)) {
+			if(remove == (w * j + i)) {
 				remove = -1
 				tile = Tile.factory();
 				tile.init(i, j, true);
@@ -449,18 +494,23 @@ Tile.Init = function(_container, _w, _h) {
 				
 				tile = Tile.factory();
 				arr.push(tile.init(i, j, avoid1, avoid2));
+				colors[tile.tileColor] = true;
 			}
-			tile.el.appendTo(_container);
+			tile.el.appendTo(container);
 			Tile.cols[i][j] = tile;
 			Tile.rows[j][i] = tile;
 			Tile.all.push(tile);
 		}
 	}
+	for(var i= 0; i < colors.length; i++){
+		if(colors[i] == false)
+			Tile.numColors--;
+	}
 	//for(tile of Tile.all) tile.update();
-	Tile.container = _container;
-	Tile.containerWidth = (_w * 100 + 8);
-	Tile.containerHeight = (_h * 100 + 8);
-	_container.css({
+	Tile.container = container;
+	Tile.containerWidth = (w * 100 + 8);
+	Tile.containerHeight = (h * 100 + 8);
+	container.css({
 		width : Tile.containerWidth + 'px',
 		height : Tile.containerHeight + 'px'
 	})
@@ -472,6 +522,12 @@ Tile.Init = function(_container, _w, _h) {
 			stagger : 1/arr.length,
 			onComplete: Tile.Update
 		});
+	$("#goal").text("(get to " + Tile.numColors + ")");
+	$("#widthInput").val(w);
+	$("#heightInput").val(h);
+	$("#colorsInput").val(Tile.numColors);
+
+	Tile.moves = 0;
 	Tile.resize();
 }
 Tile.resize = function(){
@@ -479,6 +535,11 @@ Tile.resize = function(){
 		h = $(window).height() * .95,
 		c = $('#gameSpacer'),
 		m = c.css('margin').replace(/px/g, "").split(' ').map(x=>+x);
+
+	if(w > h)
+		$(document.body).removeClass('vertical');
+	else
+		$(document.body).addClass('vertical');
 
 	if(m[1] === undefined)
 		m[1] = m[0]
@@ -493,7 +554,62 @@ Tile.resize = function(){
 Tile.sortByClass = function(_a, _b) {
 	return _a.el.prop('class').length - _b.el.prop('class').length;
 }
+Tile.checkSizes = function(_e) {
+	if(!_e ||_e.target == $("#widthInput")[0]){
+		var v = +$("#widthInput").val();
+		if(v < 2)
+			v = 2;
+		if(v > 17)
+			v = 17;
+		$("#widthInput").val(v);
+	}
+	if(!_e ||_e.target == $("#widthInput")[0]){
+		v = +$("#heightInput").val();
+		if(v < 2)
+			v = 2;
+		if(v > 17)
+			v = 17;
+		$("#heightInput").val(v);
+	}
+	if(!_e ||_e.target == $("#widthInput")[0]){
+		v = +$("#colorsInput").val();
+		if(v < 2)
+			v = 2;
+		if(v > 6)
+			v = 6;
+		$("#colorsInput").val(v);
+	}
+}
+Tile.restart = function() {
+	if(Tile.lockdown)
+		return;
+	Tile.checkSizes();
+	var w = +$("#widthInput").val(),
+		h = +$("#heightInput").val(),
+		c = +$("#colorsInput").val();
+	if(confirm("really abandon this game and start a new " + w + "x" + h + "?")){
+		var tl = Tile.releaseAll();
+		if(tl)
+			tl.eventCallback(
+				"onComplete",
+				Tile.Init, 
+					[{
+						container : $('#gameContainer'),
+						w : w, h: h,
+						numColors : c
+					}]);
+		else
+			Tile.Init(
+				{
+					container : $('#gameContainer'),
+					w : w, h: h,
+					numColors : c
+				});
+	}
+}
 Tile.randomInit = function() {
+	if(Tile.lockdown)
+		return;
 	var w = 2+Math.random() * 17,
 		h = 2+Math.random() * 17,
 		tl = Tile.releaseAll();
@@ -506,7 +622,7 @@ Tile.Update = function() {
 	for(tile of Tile.dirties)
 		tile.update();
 	Tile.releaseArray(Tile.dirties);
-	Tile.dirties = Tile.moving.concat();
+	Tile.dirties = Tile.giveMeAnArray();
 	for(group of Tile.groups) {
 		if(group.dirty){
 			group.dirty = false;
@@ -533,7 +649,13 @@ Tile.Update = function() {
 		}
 	}
 	Tile.loop = requestAnimationFrame(Tile.Update);
-	var arr = Tile.giveMeAnArray();
+	var arr = Tile.giveMeAnArray(),
+		str = (Tile.groups.length -1)+ " groups";
+	if($("#progress").text() != str)
+		$("#progress").text(str);
+	str = Tile.moves + " moves";
+	if($("#score").text() != str)
+		$("#score").text(str);
 	while(Tile.allDirtyClasses.length){
 		if(new Date().getTime() > start + 25){
 			return;
@@ -553,18 +675,23 @@ Tile.Update = function() {
 	}
 	_.shuffle(arr);
 	var tl = new TimelineLite({tweens : arr, stagger : 1/arr.length});
-	if(Tile.groups.length == Tile.numColors)
-		Alert("you won (TODO : better win screen).")
 	Tile.releaseArray(arr);
+	if(Tile.isPlaying && Tile.moving.length == 0){
+		if(Tile.groups.length == Tile.numColors + 1){
+			Tile.isPlaying = false;
+			alert("you won (TODO : better win screen).");
+		}
+	}
 }
 Tile.sorter = function(_a, _b){
-	var a = _a.target.data('tile'),
-		b = _b.target.data('tile');
+	var a = _a.target.parent().data('tile'),
+		b = _b.target.parent().data('tile');
 	a = ((a.x + 1) * (a.y + 1)) + a.y/100,
 	b = ((b.x + 1) * (b.y + 1)) + b.y/100;
 	return a-b;
 }
 Tile.lockdown = true;
+Tile.isPlaying = true;
 Tile.width = 8;
 Tile.height = 8;
 Tile.arrayPool = [];
