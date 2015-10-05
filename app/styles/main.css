@@ -5,6 +5,7 @@ body {
   height : 100%;
   color: #333;
   overflow: hidden;
+  margin:0;
 }
 
 body.dark{
@@ -13,11 +14,8 @@ body.dark{
 
 .hero-unit {
 }
-.hole, .hero-unit{
+.hole>div, .hero-unit{
   background-color: #ddd;
-}
-.hole{
-  border: 1px solid gray;
 }
 
 #gameContainer{
@@ -26,7 +24,7 @@ body.dark{
   font-weight: 200;
   line-height: 30px;
   border-radius: 6px;
-  transform: translate(-50%, -50%);
+  transform: translate(0, -50%);
   position: relative;
 }
 #gameSpacer{
@@ -34,23 +32,133 @@ body.dark{
   width: 0;
   height: 0;
   top: 50%;
+  left: 2.5%;
+}
+.vertical #gameSpacer{
+  position: absolute;
+  width: 0;
+  height: 0;
+  left: 50%;
+  top: inherit;
+  bottom: 2.5%;
+}
+.vertical #gameContainer{
+  transform: translate(-50%, -100%);
+}
+#gameScoreZone{
+  position: absolute;
+  right: 0;
+  height: 0;
+  top: 50%;
+  text-align: center;
+  transition-property: top left;
+  transition-duration: 0.5s;
+}
+#gameScoreZone>form{
+  transform: translate(0, -50%);
+  transition-property: transform;
+  transition-duration: 0.5s;
+}
+.vertical #gameScoreZone{
+  top: 0;
+  height: 0;
   left: 50%;
 }
+.vertical #gameScoreZone>form{
+  transform: translate(-50%, 0);
+  float: left;
+}
+.vertical #gameScoreZone br.skippable{
+  display: none;
+}
+#score{
+  font-size: 35px;
+  font-weight: bold;
+}
 #gameOptions{
-  position: fixed;
-  height: 50%;
-  top: 25%;
-  margin: auto;
+  position: absolute;
+  height: 100%;
+  top: 0;
+  /* right: 100%; */
   vertical-align: middle;
   background-color: #ddd;
-  margin-left: -25px;
-  padding: 10px 25px;
-  border-radius: 0 10px 10px 0
+  /* margin-left: -50px; */
+  min-width: 20%;
+  padding: 25px;
+  transform: translate3D(0%, 0, 0);
+  margin-top: auto;
+  transition-property: transform;
+  transition-duration: 0.3s;
+  transition-delay: 0.3s;
+  margin-top: auto;
+  /* overflow: hidden; */
 }
-.dark .hole, .dark .hero-unit, .dark .hero-form{
-  background-color: #222;
+#gameOptions>form{
+  position: absolute;
+  top: 50%;
+}
+#gameOptions>form>div{
+  transform: translate(0, -50%);
+}
+#gameOptions.hide{
+  transform: translate3D(-100%, 0, 0);
+  transition-delay: 0.0s;
+  overflow: visible;
+}
+#gameOptions #openIcon, #gameOptions #closeIcon{
+  position: absolute;
+  width: 40px;
+  /* height: 30px; */
+  margin-top: -25px;
+  /* margin-bottom: 10px; */
+  cursor: hand;
+  cursor: pointer;
+  display: block;
+  text-align: center;
+  vertical-align: top;
+  transition-property: transform visibility;
+  transition-duration: 0.3s;
+}
+#openIcon{
+  font-size: 60px;
+  height: 45px;  transition-delay: 0.0s;
+  transform: translate3D(-100%, 0, 0);
+  background-color: inherit;
+  border-radius: 0 0 20px 0;
+  left: 100%;
+  visibility: hidden;
+}
+#closeIcon{
+  font-size: 40px;
+  transition-delay:0.8s;
+  transform: translate3D(0, 0%, 0);
+  background-color: #fafafa;
+  border-radius: 0 0 0 20px;
+  right: 0%;
+}
+.dark #closeIcon{
+  background-color: #060606;
+  visibility: visible;
+}
+.hide #openIcon{
+  transition-delay:0.8s;
+  transform: translate3D(0, 0%, 0);
+  visibility: visible;
+}
+.hide #closeIcon{
+  transition-delay: 0.8s;
+  transform: translate3D(100%, 0, 0);
+  visibility: hidden;
+}
+.hide #openIcon:hover{
+  animation: blink 1s steps(60, start) infinite;
 }
 
+@keyframes blink {
+  to {
+    pacity: 0.2;
+  }
+}
 .hero-unit h1 {
   font-size: 60px;
   line-height: 1;
@@ -73,6 +181,9 @@ body.dark{
   cursor: hand;
   /*transform: translate-Z(0);*/
 }
+.dark .hole>div, .dark .hero-unit, .dark .hero-form{
+  background-color: #222;
+}
 .tile>div{
   border-radius: 6px;
   padding-top: 30px;
@@ -86,9 +197,14 @@ body.dark{
   left: 0;
   right: 0;
   transform-origin: center center;
+  transform: rotate(0deg);
+  border: 0px solid gray;
+}
+.hole>div{
+  border: 1px solid gray;
+  border-radius: 25%;
 }
 .dark .tile{
-  border-color: #222
 }
 .almostGroup>div{
   border-radius: 2px;
@@ -228,17 +344,24 @@ body.dark{
 .dark .noGroup{
   border-color : #222;
 } */
-.tile.dead>div{
-  width: 0;
-  height: 0;
-  transform: rotate(359deg);
-  background-color: #ddd
+.tile>div.dead{
+  /* top: 50%;
+  bottom: 50%;
+  left: 50%;
+  right: 50%; */
+  padding: 0;
+  transform: rotate(359deg),scale(0);
+  background-color: #ddd;
   border: 0px solid #ddd;
+  border-radius: 50%;
 }
-.dark .tile.dead>div{
-  background-color: #222
+.dark .tile>div.dead{
+  background-color: #222;
   border: 0px solid #222;
 }
 .tile.moving>div{
   border-radius: 25%;
+}
+.hole.moving>div{
+  border-radius: 50%;
 }
