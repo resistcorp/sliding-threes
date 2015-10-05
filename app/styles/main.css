@@ -93,11 +93,11 @@ body.dark{
   margin-top: auto;
   /* overflow: hidden; */
 }
-#gameOptions>form{
+#gameOptions>.form{
   position: absolute;
   top: 50%;
 }
-#gameOptions>form>div{
+#gameOptions>.form>div{
   transform: translate(0, -50%);
 }
 #gameOptions.hide{

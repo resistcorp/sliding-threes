@@ -144,7 +144,7 @@ module.exports = function(grunt) {
           ],
           port: 9000,
           server: {
-            baseDir: ['.tmp', config.dist],
+            baseDir: [config.dist],
             routes: {
             }
           }
