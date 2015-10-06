@@ -52,6 +52,7 @@ $(function() {
 			Tile.applyMoves(tile.moveList)
 			event.stopPropagation();
 		})
+	$(document.body).on("touchstart", function(_e){$('score').text("BODY!!!!");cancelAnimationFrame(Tile.loop);});
 	Tile.resize();
 })
 function Tile () {
@@ -83,6 +84,8 @@ Tile.prototype = {
 		this.dirty();
 		this.el.prop('class',this.class.join(' '));
 		this.child.prop('class', "dead");
+		this.el.on("touchenter", this.swipeMe);
+
 		return TweenMax.to(
 				this.child, .5,
 				{
@@ -90,6 +93,11 @@ Tile.prototype = {
 				}
 			);
 ;
+	},
+	swipeMe: function() {
+		$('score').text("ENTER!!!!");
+		Tile.lockdown = true;
+		Tweenmax.to(this, 1.0, {className: "dead"});
 	},
 	dirty: function() {
 		if(!this.isDirty) {
@@ -700,6 +708,7 @@ Tile.pool = Tile.giveMeAnArray();
 Tile.groups = Tile.giveMeAnArray();
 Tile.moving = Tile.giveMeAnArray();
 Tile.dirties = Tile.giveMeAnArray();
+Tile.nextMoves = Tile.giveMeAnArray();
 Tile.allDirtyClasses = Tile.giveMeAnArray();
 Tile.threshold = 4;
 Tile.timeline = new TimelineLite();
