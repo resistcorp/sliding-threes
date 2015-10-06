@@ -1,6 +1,7 @@
 {
   "private": true,
   "devDependencies": {
+    "autoprefixer": "^6.0.3",
     "autoprefixer-core": "^5.2.1",
     "grunt": "^0.4.5",
     "grunt-autoprefixer": "0.2.x",
