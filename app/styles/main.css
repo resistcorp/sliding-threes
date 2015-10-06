@@ -179,6 +179,7 @@ body.dark{
   z-index: 10;
   cursor: pointer;
   cursor: hand;
+  user-select:none;
   /*transform: translate-Z(0);*/
 }
 .dark .hole>div, .dark .hero-unit, .dark .hero-form{

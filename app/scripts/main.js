@@ -52,7 +52,7 @@ $(function() {
 			Tile.applyMoves(tile.moveList)
 			event.stopPropagation();
 		})
-	$(document.body).on("touchstart", function(_e){$('score').text("BODY!!!!");cancelAnimationFrame(Tile.loop);});
+	$(container).on("touchstart touchmove touchend", Tile.updateMove);
 	Tile.resize();
 })
 function Tile () {
@@ -61,6 +61,7 @@ function Tile () {
 	this.child = $('<div class="dead" />')
 	this.el.append(this.child);
 	this.el.data('tile', this);
+	this.child.data('tile', this);
 }
 //Tile.prototype = $('<div class="tile" />');
 Tile.prototype = {
@@ -84,7 +85,6 @@ Tile.prototype = {
 		this.dirty();
 		this.el.prop('class',this.class.join(' '));
 		this.child.prop('class', "dead");
-		this.el.on("touchenter", this.swipeMe);
 
 		return TweenMax.to(
 				this.child, .5,
@@ -94,10 +94,8 @@ Tile.prototype = {
 			);
 ;
 	},
-	swipeMe: function() {
-		$('score').text("ENTER!!!!");
-		Tile.lockdown = true;
-		Tweenmax.to(this, 1.0, {className: "dead"});
+	swipeMe: function(_event) {
+		console.log(this, _event)
 	},
 	dirty: function() {
 		if(!this.isDirty) {
@@ -417,6 +415,14 @@ Tile.swap = function(_tile1, _tile2) {
 	_tile1.moveTo(_tile2.x,_tile2.y);
 	_tile2.moveTo(x,y);
 }
+Tile.updateMove = function(_event){
+	var t = _event.originalEvent.touches[0],
+		div = document.elementFromPoint(t.pageX, t.pageY),
+		tile = $(div).data('tile');
+	//if(tile)
+		//TweenMax.to(tile.child, 1.0, {className: 'dead'});
+	_event.preventDefault();
+}
 Tile.giveUp = function(_tile){
 	_tile.el.detach();
 	Tile.tileColor = -1;
@@ -662,8 +668,8 @@ Tile.Update = function() {
 	if($("#progress").text() != str)
 		$("#progress").text(str);
 	str = Tile.moves + " moves";
-	if($("#score").text() != str)
-		$("#score").text(str);
+	//if($("#score").text() != str)
+	//	$("#score").text(str);
 	while(Tile.allDirtyClasses.length){
 		if(new Date().getTime() > start + 25){
 			return;
