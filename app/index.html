@@ -21,9 +21,10 @@
     <!-- endbuild -->
     <!-- bower:js -->
     <script src="lib/jquery/dist/jquery.js"></script>
-    <script src="lib/jquery-ui/jquery-ui.js"></script>
+    <script src="lib/underscore/underscore.js"></script>
     <!-- endbower -->
     <!-- build:js scripts/main.js -->
+    <script src="lib/TweenMax.min.js"></script>
     <script src="scripts/main.js"></script>
     <!-- endbuild -->
     
@@ -34,13 +35,42 @@
     <![endif]-->
 
     
-    <div class="hero-unit" id="gameContainer"></div>
-    <div class="hero-form" id="gameOptions">
-        <input type="checkbox" name="dirCheck" id="dirCheck">
-        <label for="dirCheck">Invert Directions</label>
+    <div id="gameSpacer">
+      <div id="gameContainer" class="hero-unit"></div>
+    </div>
+    <div id="gameScoreZone">
+      <form>
+        <label id="score"></label>
         <br />
-        <input type="checkbox" name="darkCheck" id="darkCheck" checked="checked">
-        <label for="darkCheck">Dark theme</label>
+        <label id="progress"></label>
+        <br class="skippable"/>
+        <label id="goal"></label>
+      </form>
+    </div>
+    <div class="hero-form hide" id="gameOptions">
+        <div id="closeIcon">&lt;</div>
+        <div id="openIcon">*</div>
+      <div class="form">
+        <div>
+          <input type="checkbox" name="dirCheck" id="dirCheck">
+          <label for="dirCheck">Invert Directions</label>
+          <br />
+          <input type="checkbox" name="darkCheck" id="darkCheck" checked="checked">
+          <label for="darkCheck">Dark theme</label>
+          <br />
+          <label for="widthInput">horiz</label>
+          <input type="text" name="widthInput" id="widthInput" maxlength="2" size="2" >
+          <br />
+          <label for="heightInput">vert</label>
+          <input type="text" name="heightInput" id="heightInput" maxlength="2" size="2" >
+          <br />
+          <label for="colorsInput">colors</label>
+          <input type="text" name="colorsInput" id="colorsInput" maxlength="2" size="2" >
+          <br />
+          <button onclick="Tile.restart();">restart game</button>
+          <br />
+        </div>
+      </div>
     </div>
     
     
