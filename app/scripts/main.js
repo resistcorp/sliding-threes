@@ -20,7 +20,7 @@ $(function() {
 		else
 			TweenMax.to($(document.body), 2.5, {className : 'dark'});
 	});
-	$(window).on('resize', $.debounce(500, Tile.resize));
+	$(window).on('resize', _.debounce(Tile.resize, 500));
 	$(document.body).on("keydown", function( event ) {
 		if(Tile.hole){
 			switch(event.keyCode) {
@@ -49,10 +49,13 @@ $(function() {
 	container.on("click", ".tile", function( event ) {
 			var tile = $(this).data('tile');
 			console.log( tile.tileColor, tile.moveList );
-			Tile.applyMoves(tile.moveList)
+			Tile.applyMoves(tile.moveList);
+			Tile.currentGesture = null;
+			//TODO
 			event.stopPropagation();
 		})
-	$(container).on("touchstart touchmove touchend", Tile.updateMove);
+	$(container).on("touchstart touchmove touchend", ".tile", Tile.updateMove);
+	$(container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.simulateTouch);
 	Tile.resize();
 })
 function Tile () {
@@ -122,7 +125,7 @@ Tile.prototype = {
 	},
 	removeClass: function() {
 		var str, index, list = arguments;
-		if(Array.isArray(list[0]))
+		if(_.isArray(list[0]))
 			list = list[0];
 		for(str of list){
 			index = this.class.indexOf(str);
@@ -133,7 +136,7 @@ Tile.prototype = {
 	},
 	addClass: function() {
 		var str, list = arguments;
-		if(Array.isArray(list[0]))
+		if(_.isArray(list[0]))
 			list = list[0];
 		for(str of list)
 			if(str != "" && this.class.indexOf(str) == -1)
@@ -367,7 +370,7 @@ Tile.giveMeAnArray = function() {
 	return [];
 }
 Tile.releaseArray = function(_array) {
-	if(!Array.isArray(_array))
+	if(!_.isArray(_array))
 		return;
 	_array.length = 0;
 	if(Tile.arrayPool.indexOf(_array) == -1)
@@ -376,7 +379,7 @@ Tile.releaseArray = function(_array) {
 Tile.getRandColor = function(_avoid1, _avoid2) {
 	var num;
 	do{
-		num = (Math.random() * Tile.numColors) >>0
+		num = _.random(0, Tile.numColors -1)
 	}while(num == _avoid1 || num == _avoid2)
 	return "" + num;
 }
@@ -384,15 +387,15 @@ Tile.swapDirs = function(_val) {
 	if(_val && _val.type == "change")
 		_val = _val.target.checked;
 	if(_val)
-		Tile.DIRTEXTS = {right : "►",up : "▲",left : "◄",down : "▼"};
+		Tile.DIRTEXTS = {right : "→",up : "↑",left : "←",down : "↓"};
 	else
-		Tile.DIRTEXTS = {right : "◄",up : "▼",left : "►",down : "▲"};
+		Tile.DIRTEXTS = {right : "←",up : "↓",left : "→",down : "↑"};
 	Tile.invertedDirs = _val;
 	for(var tile of Tile.all)
 		tile.update()
 }
 Tile.applyMoves = function(_move) {
-	if(Array.isArray(_move)){
+	if(_.isArray(_move)){
 		for(var move of _move)
 			Tile.applyMoves(move);
 		return;
@@ -415,13 +418,76 @@ Tile.swap = function(_tile1, _tile2) {
 	_tile1.moveTo(_tile2.x,_tile2.y);
 	_tile2.moveTo(x,y);
 }
+Tile.simulateTouch = function(_event){
+	var tile = $(this).data('tile');
+	switch(_event.type){
+		case "mousedown":
+			Tile.currentGesture = null;
+			Tile.updateGesture(0, tile, _event.pageX, _event.pageY);
+		    _event.preventDefault();
+		    return false;
+			break;
+		case "mousemove":
+			if(Tile.currentGesture){
+				Tile.updateGesture(0, tile, _event.pageX, _event.pageY);
+			    _event.preventDefault();
+			    return false;
+			}
+			break;
+		case "mouseenter":
+			if(Tile.currentGesture)
+				Tile.updateGesture(0, tile, _event.pageX, _event.pageY);
+			break;
+		case "mouseup":
+			if(Tile.currentGesture)
+				Tile.endGesture(0, tile, _event.pageX, _event.pageY);
+			break;
+	}
+}
 Tile.updateMove = function(_event){
 	var t = _event.originalEvent.touches[0],
-		div = document.elementFromPoint(t.pageX, t.pageY),
-		tile = $(div).data('tile');
-	//if(tile)
-		//TweenMax.to(tile.child, 1.0, {className: 'dead'});
-	_event.preventDefault();
+		div = t && document.elementFromPoint(t.pageX, t.pageY),
+		tile = div && $(div).data('tile');
+	if(tile)
+		Tile.updateGesture(t.identifier, tile, t.pageX, t.pageY);
+	else
+		Tile.endGesture();
+	if(_event.type == 'touchmove')
+		_event.preventDefault();
+}
+Tile.updateGesture = function(_id, _tile, _pageX, _pageY){
+	if(!Tile.currentGesture){
+		Tile.currentGesture = {
+			id: _id,
+			tiles: Tile.giveMeAnArray(),
+			overlays: Tile.giveMeAnArray(),
+			moves: Tile.giveMeAnArray(),
+			ended: false,
+			type: "unknown",
+			created: _.now(),
+			_startX: _pageX,
+			_startY: _pageY
+		}
+		if(_tile.moveList.length == 1)
+			Tile.currentGesture.moves.push(_tile.moveList[0]);
+	}
+	if(Tile.currentGesture.id != _id){
+		//TODO
+	}
+	Tile.currentGesture.lastUpdated = _.now();
+	var last = _.last(Tile.currentGesture.tiles);
+	if(last != _tile){
+		if(last){
+			var index = last.neighbors.indexOf(_tile);
+			if(index == -1)
+				return Tile.currentGesture.ended = true;
+			Tile.currentGesture.moves.push(Tile.DIRS[index]);
+		}
+		Tile.currentGesture.tiles.push(_tile);
+	}
+}
+Tile.endGesture = function(_id, _tile, pageX, pageY){
+	return Tile.currentGesture.ended = true;
 }
 Tile.giveUp = function(_tile){
 	_tile.el.detach();
@@ -440,7 +506,7 @@ Tile.releaseAll = function(){
 		st = 1 / Tile.all.length,
 		i;
 	while(Tile.all.length > 0){
-		i = (Math.random() * Tile.all.length) >> 0;
+		i = _.random(Tile.all.length);
 		var tile = Tile.all[i];
 		tile.setText('');
 		Tile.all.splice(i, 1)
@@ -472,7 +538,7 @@ Tile.Init = function(_options) {
 	for(var i= 0; i < Tile.numColors; i++){
 		colors[i] = false;
 	}
-	var remove = Math.floor(Math.random() * w * h),
+	var remove = _.random(w * h -1),
 		arr = Tile.giveMeAnArray();
 	if (w == 1 && h == 1){
 		remove = 2;
@@ -487,7 +553,7 @@ Tile.Init = function(_options) {
 			//one!
 			if(i==0)
 				Tile.rows[j] = Tile.giveMeAnArray();
-			avoid1 = avoid2 = -1;
+			avoid1 = avoid2 = -2;
 			if(remove == (w * j + i)) {
 				remove = -1
 				tile = Tile.factory();
@@ -624,17 +690,16 @@ Tile.restart = function() {
 Tile.randomInit = function() {
 	if(Tile.lockdown)
 		return;
-	var w = 2+Math.random() * 17,
-		h = 2+Math.random() * 17,
+	var w = _.random(2, 17),
+		h = _.random(2, 17),
 		tl = Tile.releaseAll();
 	tl && tl.eventCallback("onComplete", Tile.Init, [$('#gameContainer'), w>>0, h>>0]);
 }
 Tile.Update = function() {
 	Tile.lockdown = false;
 	var tile, tile2, list, totest, group;
-	var start = new Date().getTime();
-	for(tile of Tile.dirties)
-		tile.update();
+	var start = _.now();
+	_.invoke(Tile.dirties, 'update');
 	Tile.releaseArray(Tile.dirties);
 	Tile.dirties = Tile.giveMeAnArray();
 	for(group of Tile.groups) {
@@ -671,7 +736,7 @@ Tile.Update = function() {
 	//if($("#score").text() != str)
 	//	$("#score").text(str);
 	while(Tile.allDirtyClasses.length){
-		if(new Date().getTime() > start + 25){
+		if(_.now() > start + 25){
 			return;
 		}
 		tile = Tile.allDirtyClasses.shift();
@@ -694,6 +759,14 @@ Tile.Update = function() {
 		if(Tile.groups.length == Tile.numColors + 1){
 			Tile.isPlaying = false;
 			alert("you won (TODO : better win screen).");
+		}
+	}
+	if(Tile.currentGesture && Tile.currentGesture.ended){
+		var move = Tile.currentGesture.moves.shift()
+		if(move){
+			Tile.applyMoves(move);
+		}else{
+			Tile.currentGesture = null;
 		}
 	}
 }
