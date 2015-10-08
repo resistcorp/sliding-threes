@@ -190,8 +190,8 @@ Tile.prototype = {
 		return TweenMax.to(
 			this.el, .5,
 			{
-				top: 5 + _y * 100 + 'px',
-				left: 5 + _x * 100 + 'px',
+				y: 5 + _y * 100 + 'px',
+				x: 5 + _x * 100 + 'px',
 				//duration : 500,
 				className : this.class.join(' ') + " moving",
 				onComplete : this.arrive,
@@ -211,10 +211,13 @@ Tile.prototype = {
 			this.neighbors[i] = null;
 		}
 		this.removeClass('moving');
-		this.el.stop().css({
-			top: 5 + _y * 100 + 'px',
-			left: 5 + _x * 100 + 'px'
-		});
+		TweenMax.set(
+			this.el,
+			{
+				y : 5 + _y * 100,
+				x : 5 + _x * 100
+			}
+		);
 		if(!_noUpdate)
 			this.update();
 	},
@@ -506,7 +509,7 @@ Tile.releaseAll = function(){
 		st = 1 / Tile.all.length,
 		i;
 	while(Tile.all.length > 0){
-		i = _.random(Tile.all.length);
+		i = _.random(Tile.all.length-1);
 		var tile = Tile.all[i];
 		tile.setText('');
 		Tile.all.splice(i, 1)
@@ -573,7 +576,10 @@ Tile.Init = function(_options) {
 					avoid2 = -1;
 				
 				tile = Tile.factory();
-				arr.push(tile.init(i, j, avoid1, avoid2));
+				arr.push({
+					init : tile.init(i, j, avoid1, avoid2),
+					val : ((tile.x + 1) + (tile.y + 1)) + tile.y/100
+				});
 				colors[tile.tileColor] = true;
 			}
 			tile.el.appendTo(container);
@@ -594,14 +600,17 @@ Tile.Init = function(_options) {
 		width : Tile.containerWidth + 'px',
 		height : Tile.containerHeight + 'px'
 	})
-	arr.sort(Tile.sorter);
+	var sorted = _.sortBy(arr, 'val');
+	Tile.releaseArray(arr);
+	arr = _.pluck(sorted, 'init');
 
 	var tl = new TimelineLite(
 		{
 			tweens : arr,
-			stagger : 1/arr.length,
+			stagger : 3.5/arr.length,
 			onComplete: Tile.Update
 		});
+	Tile.releaseArray(sorted);
 	$("#goal").text("(get to " + Tile.numColors + ")");
 	$("#widthInput").val(w);
 	$("#heightInput").val(h);
@@ -609,6 +618,7 @@ Tile.Init = function(_options) {
 
 	Tile.moves = 0;
 	Tile.resize();
+	return tl;
 }
 Tile.resize = function(){
 	var w = $(window).width() * .95,
@@ -733,8 +743,8 @@ Tile.Update = function() {
 	if($("#progress").text() != str)
 		$("#progress").text(str);
 	str = Tile.moves + " moves";
-	//if($("#score").text() != str)
-	//	$("#score").text(str);
+	if($("#score").text() != str)
+		$("#score").text(str);
 	while(Tile.allDirtyClasses.length){
 		if(_.now() > start + 25){
 			return;
