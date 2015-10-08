@@ -190,8 +190,8 @@ Tile.prototype = {
 		return TweenMax.to(
 			this.el, .5,
 			{
-				y: 5 + _y * 100 + 'px',
-				x: 5 + _x * 100 + 'px',
+				top: 5 + _y * 100 + 'px',
+				left: 5 + _x * 100 + 'px',
 				//duration : 500,
 				className : this.class.join(' ') + " moving",
 				onComplete : this.arrive,
@@ -211,13 +211,10 @@ Tile.prototype = {
 			this.neighbors[i] = null;
 		}
 		this.removeClass('moving');
-		TweenMax.set(
-			this.el,
-			{
-				y : 5 + _y * 100,
-				x : 5 + _x * 100
-			}
-		);
+		this.el.stop().css({
+			top: 5 + _y * 100 + 'px',
+			left: 5 + _x * 100 + 'px'
+		});
 		if(!_noUpdate)
 			this.update();
 	},
@@ -576,10 +573,7 @@ Tile.Init = function(_options) {
 					avoid2 = -1;
 				
 				tile = Tile.factory();
-				arr.push({
-					init : tile.init(i, j, avoid1, avoid2),
-					val : ((tile.x + 1) + (tile.y + 1)) + tile.y/100
-				});
+				arr.push(tile.init(i, j, avoid1, avoid2));
 				colors[tile.tileColor] = true;
 			}
 			tile.el.appendTo(container);
@@ -600,17 +594,14 @@ Tile.Init = function(_options) {
 		width : Tile.containerWidth + 'px',
 		height : Tile.containerHeight + 'px'
 	})
-	var sorted = _.sortBy(arr, 'val');
-	Tile.releaseArray(arr);
-	arr = _.pluck(sorted, 'init');
+	arr.sort(Tile.sorter);
 
 	var tl = new TimelineLite(
 		{
 			tweens : arr,
-			stagger : 3.5/arr.length,
+			stagger : 1/arr.length,
 			onComplete: Tile.Update
 		});
-	Tile.releaseArray(sorted);
 	$("#goal").text("(get to " + Tile.numColors + ")");
 	$("#widthInput").val(w);
 	$("#heightInput").val(h);
@@ -618,7 +609,6 @@ Tile.Init = function(_options) {
 
 	Tile.moves = 0;
 	Tile.resize();
-	return tl;
 }
 Tile.resize = function(){
 	var w = $(window).width() * .95,
@@ -743,8 +733,8 @@ Tile.Update = function() {
 	if($("#progress").text() != str)
 		$("#progress").text(str);
 	str = Tile.moves + " moves";
-	if($("#score").text() != str)
-		$("#score").text(str);
+	//if($("#score").text() != str)
+	//	$("#score").text(str);
 	while(Tile.allDirtyClasses.length){
 		if(_.now() > start + 25){
 			return;

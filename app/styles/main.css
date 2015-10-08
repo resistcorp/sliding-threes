@@ -1,0 +1,368 @@
+body {
+  background: #fafafa;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  width : 100%;
+  height : 100%;
+  color: #333;
+  overflow: hidden;
+  margin:0;
+}
+
+body.dark{
+  background-color: #060606;
+}
+
+.hero-unit {
+}
+.hole>div, .hero-unit{
+  background-color: #ddd;
+}
+
+#gameContainer{
+  width: 300px;
+  font-size: 18px;
+  font-weight: 200;
+  line-height: 30px;
+  border-radius: 6px;
+  transform: translate(0, -50%);
+  position: relative;
+}
+#gameSpacer{
+  position: absolute;
+  width: 0;
+  height: 0;
+  top: 50%;
+  left: 2.5%;
+}
+.vertical #gameSpacer{
+  position: absolute;
+  width: 0;
+  height: 0;
+  left: 50%;
+  top: inherit;
+  bottom: 2.5%;
+}
+.vertical #gameContainer{
+  transform: translate(-50%, -100%);
+}
+#gameScoreZone{
+  position: absolute;
+  right: 0;
+  height: 0;
+  top: 50%;
+  text-align: center;
+  transition-property: top left;
+  transition-duration: 0.5s;
+}
+#gameScoreZone>form{
+  transform: translate(0, -50%);
+  transition-property: transform;
+  transition-duration: 0.5s;
+}
+.vertical #gameScoreZone{
+  top: 0;
+  height: 0;
+  left: 50%;
+}
+.vertical #gameScoreZone>form{
+  transform: translate(-50%, 0);
+  float: left;
+}
+.vertical #gameScoreZone br.skippable{
+  display: none;
+}
+#score{
+  font-size: 35px;
+  font-weight: bold;
+}
+#gameOptions{
+  position: absolute;
+  height: 100%;
+  top: 0;
+  /* right: 100%; */
+  vertical-align: middle;
+  background-color: #ddd;
+  /* margin-left: -50px; */
+  min-width: 20%;
+  padding: 25px;
+  transform: translate3D(0%, 0, 0);
+  margin-top: auto;
+  transition-property: transform;
+  transition-duration: 0.3s;
+  transition-delay: 0.3s;
+  margin-top: auto;
+  /* overflow: hidden; */
+}
+#gameOptions>.form{
+  position: absolute;
+  top: 50%;
+}
+#gameOptions>.form>div{
+  transform: translate(0, -50%);
+}
+#gameOptions.hide{
+  transform: translate3D(-100%, 0, 0);
+  transition-delay: 0.0s;
+  overflow: visible;
+}
+#gameOptions #openIcon, #gameOptions #closeIcon{
+  position: absolute;
+  width: 40px;
+  /* height: 30px; */
+  margin-top: -25px;
+  /* margin-bottom: 10px; */
+  cursor: hand;
+  cursor: pointer;
+  display: block;
+  text-align: center;
+  vertical-align: top;
+  transition-property: transform visibility;
+  transition-duration: 0.3s;
+}
+#openIcon{
+  font-size: 60px;
+  height: 45px;  transition-delay: 0.0s;
+  transform: translate3D(-100%, 0, 0);
+  background-color: inherit;
+  border-radius: 0 0 20px 0;
+  left: 100%;
+  visibility: hidden;
+}
+#closeIcon{
+  font-size: 40px;
+  transition-delay:0.8s;
+  transform: translate3D(0, 0%, 0);
+  background-color: #fafafa;
+  border-radius: 0 0 0 20px;
+  right: 0%;
+}
+.dark #closeIcon{
+  background-color: #060606;
+  visibility: visible;
+}
+.hide #openIcon{
+  transition-delay:0.8s;
+  transform: translate3D(0, 0%, 0);
+  visibility: visible;
+}
+.hide #closeIcon{
+  transition-delay: 0.8s;
+  transform: translate3D(100%, 0, 0);
+  visibility: hidden;
+}
+.hide #openIcon:hover{
+  animation: blink 1s steps(60, start) infinite;
+}
+
+@keyframes blink {
+  to {
+    pacity: 0.2;
+  }
+}
+.hero-unit h1 {
+  font-size: 60px;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.browsehappy {
+  margin: 0.2em 0;
+  background: #ccc;
+  color: #000;
+  padding: 0.2em 0;
+}
+
+.tile {
+  position : absolute;
+  width: 100px;
+  height: 100px;
+  z-index: 10;
+  cursor: pointer;
+  cursor: hand;
+  user-select:none;
+  /*transform: translate-Z(0);*/
+}
+.dark .hole>div, .dark .hero-unit, .dark .hero-form{
+  background-color: #222;
+}
+.tile>div{
+  border-radius: 6px;
+  padding-top: 30px;
+  position: absolute;
+  margin:3px;
+  font-size: 80px;
+  text-align: center;
+  vertical-align: middle;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform-origin: center center;
+  transform: rotate(0deg);
+  border: 0px solid gray;
+}
+.hole>div{
+  border: 1px solid gray;
+  border-radius: 25%;
+}
+.dark .tile{
+}
+.almostGroup>div{
+  border-radius: 2px;
+  margin:1.0px;
+}
+.dark .tile.almostGroup>div{
+  border-color : #222;
+}
+.hole{
+  z-index: 1;
+  cursor: move;
+}
+.dark .color0>div{
+  background-color: #F88;
+  border-color: #A00;
+}
+.dark .color1>div{
+  background-color: #8F8;
+  border-color: #0A0;
+}
+.dark .color2>div{
+  background-color: #88F;
+  border-color: #00A;
+}
+.dark .color3>div{
+  background-color: #FF8;
+  border-color: #AA0;
+}
+.dark .color4>div{
+  background-color: #8FF;
+  border-color: #0AA;
+}
+.dark .color5>div{
+  background-color: #F8F;
+  border-color: #A0D;
+}
+.color0>div{
+  background-color: #A00;
+  border-color: #F88;
+}
+.color1>div{
+  background-color: #0A0;
+  border-color: #8F8;
+}
+.color2>div{
+  background-color: #00A;
+  border-color: #88F;
+}
+.color3>div{
+  background-color: #AA0;
+  border-color: #FF8;
+}
+.color4>div{
+  background-color: #0AA;
+  border-color: #8FF;
+}
+.color5>div{
+  background-color: #A0D;
+  border-color: #F8F;
+}
+/* .left>div{
+}
+.right>div{
+}
+.up>div{
+}
+.down>div{
+}
+.dark .left>div{
+}
+.dark .right>div{
+}
+.dark .up>div{
+}
+.dark .down>div{
+} */
+.almostGroup.up.left>div{
+  border-top-left-radius: 6px;
+}
+.almostGroup.up.right>div{
+  border-top-right-radius: 6px;
+}
+.almostGroup.down.right>div{
+  border-bottom-right-radius: 6px;
+}
+.almostGroup.down.left>div{
+  border-bottom-left-radius: 6px;
+}
+.almostGroup.left>div{
+  margin-left:3px;
+}
+.almostGroup.right>div{
+  margin-right:3px;
+}
+.almostGroup.up>div{
+  margin-top:3px;
+}
+.almostGroup.down>div{
+  margin-bottom:3px;
+}
+.isGroup>div{
+  border-radius: 3.5px;
+  margin: -1px;
+  border: solid 0px;
+}
+.isGroup.up.left>div{
+  border-top-left-radius: 10px;
+}
+.isGroup.up.right>div{
+  border-top-right-radius: 10px;
+}
+.isGroup.down.left>div{
+  border-bottom-left-radius: 10px;
+}
+.isGroup.down.right>div{
+  border-bottom-right-radius: 10px;
+}
+.isGroup.left>div{
+  margin-left:1px;
+  border-left-width:2.5px;
+}
+.isGroup.right>div{
+  margin-right:1px;
+  border-right-width:2.5px;
+}
+.isGroup.up>div{
+  margin-top:1px;
+  border-top-width:2.5px;
+}
+.isGroup.down>div{
+  margin-bottom:1px;
+  border-bottom-width:2.5px;
+}
+/* .noGroup{
+  border-color : #ddd;
+}
+.dark .noGroup{
+  border-color : #222;
+} */
+.tile>div.dead{
+  /* top: 50%;
+  bottom: 50%;
+  left: 50%;
+  right: 50%; */
+  padding: 0;
+  transform: rotate(359deg),scale(0);
+  background-color: #ddd;
+  border: 0px solid #ddd;
+  border-radius: 50%;
+}
+.dark .tile>div.dead{
+  background-color: #222;
+  border: 0px solid #222;
+}
+.tile.moving>div{
+  border-radius: 25%;
+}
+.hole.moving>div{
+  border-radius: 50%;
+}
