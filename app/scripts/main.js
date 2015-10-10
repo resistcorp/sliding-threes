@@ -780,13 +780,6 @@ Tile.Update = function() {
 		}
 	}
 }
-Tile.sorter = function(_a, _b){
-	var a = _a.target.parent().data('tile'),
-		b = _b.target.parent().data('tile');
-	a = ((a.x + 1) * (a.y + 1)) + a.y/100,
-	b = ((b.x + 1) * (b.y + 1)) + b.y/100;
-	return a-b;
-}
 Tile.lockdown = true;
 Tile.isPlaying = true;
 Tile.width = 8;
