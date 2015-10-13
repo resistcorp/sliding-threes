@@ -39,7 +39,7 @@ module.exports = function(grunt) {
       publish: {
         cwd: 'dist',
         src: [ '**' ],
-        dest: '../gh-pages/app',
+        dest: '../gh-pages',
         expand: true
       }
     },
@@ -186,7 +186,7 @@ module.exports = function(grunt) {
       publish: {
         dot: true,
         cwd: 'dist',
-        src: [  '../gh-pages/app*' ],
+        src: [  '../gh-pages/*' ],
       },
       server: '.tmp'
     },
