@@ -496,11 +496,7 @@ Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
 		}
 		if(_tile.moveList.length == 1){
 			Tile.currentGesture.tiles.push(Tile.hole);
-<<<<<<< HEAD
 			//Tile.currentGesture.moves.push(_tile.moveList[0]);
-=======
-			Tile.currentGesture.moves.push(_tile.moveList[0]);
->>>>>>> 71af2d1d7681987c487bafbeffe88244dff9918c
 		}
 	}
 	if(Tile.currentGesture.id != _id){
@@ -850,16 +846,6 @@ Tile.Update = function() {
 			Tile.endGesture();
 	}
 }
-<<<<<<< HEAD
-=======
-Tile.sorter = function(_a, _b){
-	var a = _a.target.parent().data('tile'),
-		b = _b.target.parent().data('tile');
-	a = ((a.x + 1) * (a.y + 1)) + a.y/100,
-	b = ((b.x + 1) * (b.y + 1)) + b.y/100;
-	return a-b;
-}
->>>>>>> 71af2d1d7681987c487bafbeffe88244dff9918c
 Tile.lockdown = true;
 Tile.isPlaying = true;
 Tile.width = 8;
