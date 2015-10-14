@@ -496,7 +496,7 @@ Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
 		}
 		if(_tile.moveList.length == 1){
 			Tile.currentGesture.tiles.push(Tile.hole);
-			Tile.currentGesture.moves.push(_tile.moveList[0]);
+			//Tile.currentGesture.moves.push(_tile.moveList[0]);
 		}
 	}
 	if(Tile.currentGesture.id != _id){
