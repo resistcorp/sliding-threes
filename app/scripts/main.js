@@ -10,9 +10,11 @@ $(function() {
 			h: height
 		}
 	);
-	$("#widthInput").on("blur", Tile.checkSizes);
-	$("#heightInput").on("blur", Tile.checkSizes);
-	$("#colorsInput").on("blur", Tile.checkSizes);
+	$("#heightInput, #widthInput, #colorsInput").on("blur", Tile.checkSizes);
+	$("#heightInput, #widthInput, #colorsInput").on("keydown", function(_event){
+		if(_event.keyCode == 13) Tile.restart();
+		_event.stopPropagation();
+	});
 	$("#dirCheck").on("change", Tile.swapDirs)
 	$("#darkCheck").on("change", function() {
 		if($(document.body).hasClass('dark'))
@@ -21,24 +23,7 @@ $(function() {
 			TweenMax.to($(document.body), 2.5, {className : 'dark'});
 	});
 	$(window).on('resize', _.debounce(Tile.resize, 500));
-	$(document.body).on("keydown", function( event ) {
-		if(Tile.hole){
-			switch(event.keyCode) {
-				case 37:
-					Tile.applyMoves(Tile.invertedDirs? 'left' : 'right');
-					break;
-				case 38:
-					Tile.applyMoves(Tile.invertedDirs? 'up' : 'down');
-					break;
-				case 39:
-					Tile.applyMoves(Tile.invertedDirs? 'right' : 'left');
-					break;
-				case 40:
-					Tile.applyMoves(Tile.invertedDirs? 'down' : 'up');
-					break;
-			}
-		}
-	})
+	$(document.body).on("keydown keyup", Tile.handleKey)
 	$('#openIcon, #closeIcon').on("click", function( event ) {
 		$('#gameOptions').toggleClass('hide')
 		/*if($('#gameOptions').hasClass('show'))
@@ -54,8 +39,8 @@ $(function() {
 			//TODO
 			event.stopPropagation();
 		})
-	$(container).on("touchstart touchmove touchend", ".tile", Tile.updateMove);
-	$(container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.simulateTouch);
+	$(container).on("touchstart touchmove touchend", ".tile", Tile.handleTouch);
+	$(container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.handleMouse);
 	Tile.resize();
 })
 function Tile () {
@@ -368,9 +353,9 @@ Tile.factory = function() {
 	return Tile.pool.pop() || new Tile();
 }
 Tile.giveMeAnArray = function() {
-	if(Tile.arrayPool.length)
-		return Tile.arrayPool.pop();
-	return [];
+	ret = Tile.arrayPool.pop() || [];
+	ret.length = 0;
+	return ret;
 }
 Tile.releaseArray = function(_array) {
 	if(!_.isArray(_array))
@@ -407,7 +392,7 @@ Tile.applyMoves = function(_move) {
 	var tile = Tile.hole.neighbors[move];
 	if(tile)
 		Tile.swap(tile, Tile.hole);
-	Tile.moves++;
+	//Tile.moves++;
 }
 Tile.swap = function(_tile1, _tile2) {
 	var x = _tile2.x,
@@ -421,25 +406,25 @@ Tile.swap = function(_tile1, _tile2) {
 	_tile1.moveTo(_tile2.x,_tile2.y);
 	_tile2.moveTo(x,y);
 }
-Tile.simulateTouch = function(_event){
+Tile.handleMouse = function(_event){
 	var tile = $(this).data('tile');
 	switch(_event.type){
 		case "mousedown":
 			Tile.currentGesture = null;
-			Tile.updateGesture(0, tile, _event.pageX, _event.pageY);
+			Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
 		    _event.preventDefault();
 		    return false;
 			break;
 		case "mousemove":
 			if(Tile.currentGesture){
-				Tile.updateGesture(0, tile, _event.pageX, _event.pageY);
+				Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
 			    _event.preventDefault();
 			    return false;
 			}
 			break;
 		case "mouseenter":
 			if(Tile.currentGesture)
-				Tile.updateGesture(0, tile, _event.pageX, _event.pageY);
+				Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
 			break;
 		case "mouseup":
 			if(Tile.currentGesture)
@@ -447,18 +432,56 @@ Tile.simulateTouch = function(_event){
 			break;
 	}
 }
-Tile.updateMove = function(_event){
+Tile.handleTouch = function(_event){
 	var t = _event.originalEvent.touches[0],
 		div = t && document.elementFromPoint(t.pageX, t.pageY),
 		tile = div && $(div).data('tile');
 	if(tile)
-		Tile.updateGesture(t.identifier, tile, t.pageX, t.pageY);
+		Tile.updateGesture(t.identifier, tile, t.pageX, t.pageY, "touch");
 	else
 		Tile.endGesture();
 	if(_event.type == 'touchmove')
 		_event.preventDefault();
 }
-Tile.updateGesture = function(_id, _tile, _pageX, _pageY){
+Tile.handleKey = function( _event ) {
+	if(Tile.hole){
+		var dir, tile;
+		if(_event.type == 'keydown'){
+			switch(event.keyCode) {
+				case 37:
+					dir = Tile.invertedDirs? 'left' : 'right';
+					break;
+				case 38:
+					dir = Tile.invertedDirs? 'up' : 'down';
+					break;
+				case 39:
+					dir = Tile.invertedDirs? 'right' : 'left';
+					break;
+				case 40:
+					dir = Tile.invertedDirs? 'down' : 'up';
+					break;
+				case 27:
+					$("#gameOptions").toggleClass('hide')
+					break;
+			}
+			if(dir){
+				if(Tile.currentGesture)
+					tile = _.last(Tile.currentGesture.tiles);
+				else
+					tile = Tile.hole;
+				tile = tile.neighbors[Tile.DIRS.indexOf(dir)];
+				if(tile){
+					dir = tile.el.prop("_gsTransform")
+					Tile.updateGesture("0", tile, dir.x, dir.y, _event.type);
+				}
+			}
+		}else{
+			if(Tile.currentGesture)
+				Tile.currentGesture.lastUpdated = _.now();
+		}
+	}
+}
+Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
 	if(!Tile.currentGesture){
 		Tile.currentGesture = {
 			id: _id,
@@ -466,30 +489,55 @@ Tile.updateGesture = function(_id, _tile, _pageX, _pageY){
 			overlays: Tile.giveMeAnArray(),
 			moves: Tile.giveMeAnArray(),
 			ended: false,
-			type: "unknown",
+			type: _type,
 			created: _.now(),
 			_startX: _pageX,
 			_startY: _pageY
 		}
-		if(_tile.moveList.length == 1)
+		if(_tile.moveList.length == 1){
+			Tile.currentGesture.tiles.push(Tile.hole);
 			Tile.currentGesture.moves.push(_tile.moveList[0]);
+		}
 	}
 	if(Tile.currentGesture.id != _id){
 		//TODO
 	}
 	Tile.currentGesture.lastUpdated = _.now();
-	var last = _.last(Tile.currentGesture.tiles);
+	if(Tile.currentGesture.tiles.length > 1){
+		var prev, last = _.last(Tile.currentGesture.tiles, 2);
+		Tile.arrayPool.push(last);
+		prev = last[0];
+		last = last[1];
+	}else{
+		last = _.last(Tile.currentGesture.tiles);
+	}
 	if(last != _tile){
-		if(last){
-			var index = last.neighbors.indexOf(_tile);
-			if(index == -1)
-				return Tile.currentGesture.ended = true;
-			Tile.currentGesture.moves.push(Tile.DIRS[index]);
+		if(_tile == prev){
+			//cancel a move
+			for(var tween of TweenMax.getTweensOf(last.el))
+				tween.progress(1.0);
+			last.el.removeClass('moving');
+			last.removeClass('moving');
+			Tile.currentGesture.moves.pop();
+			Tile.currentGesture.tiles.pop();
+		}else{
+			if(last){
+				var index = last.neighbors.indexOf(_tile);
+				if(index == -1)
+					return Tile.currentGesture.ended = true;
+				Tile.currentGesture.moves.push(Tile.DIRS[index]);
+			}
+			Tile.currentGesture.tiles.push(_tile);
+			for(var tween of TweenMax.getTweensOf(_tile.el))
+				tween.progress(1.0);
+			_tile.el.addClass('moving');
+			_tile.addClass('moving');
 		}
-		Tile.currentGesture.tiles.push(_tile);
 	}
 }
 Tile.endGesture = function(_id, _tile, pageX, pageY){
+	Tile.moves++;
+	Tile.currentGesture.nextMove = 0;
 	return Tile.currentGesture.ended = true;
 }
 Tile.giveUp = function(_tile){
@@ -602,12 +650,18 @@ Tile.Init = function(_options) {
 	})
 	var sorted = _.sortBy(arr, 'val');
 	Tile.releaseArray(arr);
-	arr = _.pluck(sorted, 'init');
+	arr = _.pluck(sorted, 'init'), dur = 2.5;
+	if(arr.length < 100)
+		dur = 1.5;
+	if(arr.length < 40)
+		dur = 1.0;
+	if(arr.length < 20)
+		dur = 0.5;
 
 	var tl = new TimelineLite(
 		{
 			tweens : arr,
-			stagger : 3.5/arr.length,
+			stagger : dur/arr.length,
 			onComplete: Tile.Update
 		});
 	Tile.releaseArray(sorted);
@@ -695,6 +749,7 @@ Tile.restart = function() {
 					w : w, h: h,
 					numColors : c
 				});
+		$('#gameOptions').addClass('hide')
 	}
 }
 Tile.randomInit = function() {
@@ -751,19 +806,19 @@ Tile.Update = function() {
 		}
 		tile = Tile.allDirtyClasses.shift();
 		if(!tile.moving && tile.dirtyClass){
-			TweenMax.to(
+			arr.push(TweenMax.to(
 				tile.el, .5,
 				{
 					className: tile.class.join(' ')
 				}
-			);
+			));
 			tile.dirtyClass = false;
 			/*requestAnimationFrame(Tile.Update);
 			return;*/
 		}
 	}
 	_.shuffle(arr);
-	var tl = new TimelineLite({tweens : arr, stagger : 1/arr.length});
+	var tl = new TimelineLite({tweens : arr, stagger : 0.25/arr.length});
 	Tile.releaseArray(arr);
 	if(Tile.isPlaying && Tile.moving.length == 0){
 		if(Tile.groups.length == Tile.numColors + 1){
@@ -771,13 +826,24 @@ Tile.Update = function() {
 			alert("you won (TODO : better win screen).");
 		}
 	}
-	if(Tile.currentGesture && Tile.currentGesture.ended){
-		var move = Tile.currentGesture.moves.shift()
-		if(move){
-			Tile.applyMoves(move);
-		}else{
-			Tile.currentGesture = null;
-		}
+	if(Tile.currentGesture){
+		if(Tile.currentGesture.ended){
+			var now = _.now();
+			if(Tile.currentGesture.nextMove < now){
+				var move = Tile.currentGesture.moves.shift()
+				if(move){
+					Tile.applyMoves(move);
+					if(Tile.currentGesture.moves.length < 25)
+						Tile.currentGesture.nextMove = now + 50;
+					else
+						Tile.currentGesture.nextMove = 0;
+				}else{
+					Tile.currentGesture = null;
+					$('.tile').removeClass('moving');
+				}
+			}
+		}else if(Tile.currentGesture.lastUpdated < _.now() - (350 + Tile.currentGesture.moves.length * 50))
+			Tile.endGesture();
 	}
 }
 Tile.lockdown = true;

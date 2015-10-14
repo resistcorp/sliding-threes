@@ -199,10 +199,10 @@ body.dark{
   right: 0;
   transform-origin: center center;
   transform: rotate(0deg);
-  border: 0px solid gray;
+  /*border: 0px solid gray;*/
 }
 .hole>div{
-  border: 1px solid gray;
+  /*border: 1px solid gray;*/
   border-radius: 25%;
 }
 .dark .tile{
@@ -212,7 +212,7 @@ body.dark{
   margin:1.0px;
 }
 .dark .tile.almostGroup>div{
-  border-color : #222;
+  /*border-color : #222;*/
 }
 .hole{
   z-index: 1;
@@ -220,51 +220,51 @@ body.dark{
 }
 .dark .color0>div{
   background-color: #F88;
-  border-color: #A00;
+  /*border-color: #A00;*/
 }
 .dark .color1>div{
   background-color: #8F8;
-  border-color: #0A0;
+  /*border-color: #0A0;*/
 }
 .dark .color2>div{
   background-color: #88F;
-  border-color: #00A;
+  /*border-color: #00A;*/
 }
 .dark .color3>div{
   background-color: #FF8;
-  border-color: #AA0;
+  /*border-color: #AA0;*/
 }
 .dark .color4>div{
   background-color: #8FF;
-  border-color: #0AA;
+  /*border-color: #0AA;*/
 }
 .dark .color5>div{
   background-color: #F8F;
-  border-color: #A0D;
+  /*border-color: #A0D;*/
 }
 .color0>div{
   background-color: #A00;
-  border-color: #F88;
+  /*border-color: #F88;*/
 }
 .color1>div{
   background-color: #0A0;
-  border-color: #8F8;
+  /*border-color: #8F8;*/
 }
 .color2>div{
   background-color: #00A;
-  border-color: #88F;
+  /*border-color: #88F;*/
 }
 .color3>div{
   background-color: #AA0;
-  border-color: #FF8;
+  /*border-color: #FF8;*/
 }
 .color4>div{
   background-color: #0AA;
-  border-color: #8FF;
+  /*border-color: #8FF;*/
 }
 .color5>div{
   background-color: #A0D;
-  border-color: #F8F;
+  /*border-color: #F8F;*/
 }
 /* .left>div{
 }
@@ -307,9 +307,9 @@ body.dark{
   margin-bottom:3px;
 }
 .isGroup>div{
-  border-radius: 3.5px;
-  margin: -1px;
-  border: solid 0px;
+  border-radius: 0;
+  margin: -0.5px;
+  /*border: solid 0px;*/
 }
 .isGroup.up.left>div{
   border-top-left-radius: 10px;
@@ -325,26 +325,26 @@ body.dark{
 }
 .isGroup.left>div{
   margin-left:1px;
-  border-left-width:2.5px;
+  /*border-left-width:2.5px;*/
 }
 .isGroup.right>div{
   margin-right:1px;
-  border-right-width:2.5px;
+  /*border-right-width:2.5px;*/
 }
 .isGroup.up>div{
   margin-top:1px;
-  border-top-width:2.5px;
+  /*border-top-width:2.5px;*/
 }
 .isGroup.down>div{
   margin-bottom:1px;
-  border-bottom-width:2.5px;
+  /*border-bottom-width:2.5px;*/
 }
-/* .noGroup{
+ .noGroup{
   border-color : #ddd;
 }
 .dark .noGroup{
-  border-color : #222;
-} */
+  /*border-color : #222;*/
+} 
 .tile>div.dead{
   /* top: 50%;
   bottom: 50%;
@@ -353,15 +353,15 @@ body.dark{
   padding: 0;
   transform: rotate(359deg),scale(0);
   background-color: #ddd;
-  border: 0px solid #ddd;
+  /*border: 0px solid #ddd;*/
   border-radius: 50%;
 }
 .dark .tile>div.dead{
   background-color: #222;
-  border: 0px solid #222;
+  /*border: 0px solid #222;*/
 }
-.tile.moving>div{
-  border-radius: 25%;
+.tile.moving>div, .tile.isGroup.moving>div, .tile.almostGroup.moving>div{
+  border-radius: 50%;
 }
 .hole.moving>div{
   border-radius: 50%;
