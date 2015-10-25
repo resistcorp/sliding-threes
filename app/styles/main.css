@@ -10,6 +10,7 @@ body {
 
 body.dark{
   background-color: #060606;
+  color: #DDD;
 }
 
 .hero-unit {
@@ -180,6 +181,7 @@ body.dark{
   cursor: pointer;
   cursor: hand;
   user-select:none;
+  color: #555;
   /*transform: translate-Z(0);*/
 }
 .dark .hole>div, .dark .hero-unit, .dark .hero-form{
