@@ -1,4 +1,4 @@
-$(function() {
+requirejs(["/lib/TweenMax.min.js","Tile.class","TileGesture.class"], function() {
 	console.log('go');
 	var container = $('#gameContainer'),
 		width = 7, height = 7;

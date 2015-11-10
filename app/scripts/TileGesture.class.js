@@ -1,5 +1,7 @@
 function TileGesture(){
-	
+	this.tiles = [];
+	this.realTiles = [];
+	this.created = _.now();
 }
 TileGesture.prototype = {
 	update : function(){

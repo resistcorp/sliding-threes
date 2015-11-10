@@ -35,7 +35,6 @@ Tile.prototype = {
 					className: ""
 				}
 			);
-;
 	},
 	swipeMe: function(_event) {
 		console.log(this, _event)
@@ -427,7 +426,7 @@ Tile.handleKey = function( _event ) {
 				tile = tile.neighbors[Tile.DIRS.indexOf(dir)];
 				if(tile){
 					dir = tile.el.prop("_gsTransform")
-					Tile.updateGesture("0", tile, dir.x, dir.y, _event.type);
+					Tile.updateGesture("0", tile, tile.x, tile.y, _event.type);
 				}
 			}
 		}else{
@@ -536,6 +535,7 @@ Tile.Init = function(_options) {
 	Tile.width = w;
 	Tile.height = h;
 	Tile.resize();
+	Tile.timeline = new TimelineLite();
 	container = options.container || $('#gameContainer')
 	Tile.cols = Tile.giveMeAnArray();
 	Tile.rows = Tile.giveMeAnArray();
@@ -814,5 +814,4 @@ Tile.dirties = Tile.giveMeAnArray();
 Tile.nextMoves = Tile.giveMeAnArray();
 Tile.allDirtyClasses = Tile.giveMeAnArray();
 Tile.threshold = 4;
-Tile.timeline = new TimelineLite();
 Tile.swapDirs(false)
