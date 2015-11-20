@@ -394,46 +394,12 @@ Tile.handleTouch = function(_event){
 		Tile.updateGesture(t.identifier, tile, t.pageX, t.pageY, "touch");
 	else
 		Tile.endGesture();
-	if(_event.type == 'touchmove')
+	if(_event.type == 'touchmove')//prevent
 		_event.preventDefault();
 }
 Tile.handleKey = function( _event ) {
-	if(Tile.hole){
-		var dir, tile;
-		if(_event.type == 'keydown'){
-			switch(event.keyCode) {
-				case 37:
-					dir = Tile.invertedDirs? 'left' : 'right';
-					break;
-				case 38:
-					dir = Tile.invertedDirs? 'up' : 'down';
-					break;
-				case 39:
-					dir = Tile.invertedDirs? 'right' : 'left';
-					break;
-				case 40:
-					dir = Tile.invertedDirs? 'down' : 'up';
-					break;
-				case 27:
-					$("#gameOptions").toggleClass('hide')
-					break;
-			}
-			if(dir){
-				if(Tile.currentGesture)
-					tile = _.last(Tile.currentGesture.tiles);
-				else
-					tile = Tile.hole;
-				tile = tile.neighbors[Tile.DIRS.indexOf(dir)];
-				if(tile){
-					dir = tile.el.prop("_gsTransform")
-					Tile.updateGesture("0", tile, tile.x, tile.y, _event.type);
-				}
-			}
-		}else{
-			if(Tile.currentGesture)
-				Tile.currentGesture.lastUpdated = _.now();
-		}
-	}
+	if(_event.type == 'keydown' && _event.keyCode == 27)
+		$("#gameOptions").toggleClass('hide')
 }
 Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
 	if(!Tile.currentGesture){
@@ -624,6 +590,9 @@ Tile.Init = function(_options) {
 	$("#widthInput").val(w);
 	$("#heightInput").val(h);
 	$("#colorsInput").val(Tile.numColors);
+	$(window).on('resize', _.debounce(Tile.resize, 500));
+	$(document.body).on("keydown", Tile.handleKey)
+	TileGesture.Init(container);
 
 	Tile.moves = 0;
 	Tile.resize();

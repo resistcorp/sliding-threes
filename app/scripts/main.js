@@ -22,8 +22,6 @@ requirejs(["/lib/TweenMax.min.js","Tile.class","TileGesture.class"], function() 
 		else
 			TweenMax.to($(document.body), 2.5, {className : 'dark'});
 	});
-	$(window).on('resize', _.debounce(Tile.resize, 500));
-	$(document.body).on("keydown keyup", Tile.handleKey)
 	$('#openIcon, #closeIcon').on("click", function( event ) {
 		$('#gameOptions').toggleClass('hide')
 		/*if($('#gameOptions').hasClass('show'))
@@ -31,15 +29,5 @@ requirejs(["/lib/TweenMax.min.js","Tile.class","TileGesture.class"], function() 
 		else
 			TweenMax.to($('#gameOptions'), .5, {className : 'show'});*/
 	});
-	container.on("click", ".tile", function( event ) {
-			var tile = $(this).data('tile');
-			console.log( tile.tileColor, tile.moveList );
-			Tile.applyMoves(tile.moveList);
-			Tile.currentGesture = null;
-			//TODO
-			event.stopPropagation();
-		})
-	$(container).on("touchstart touchmove touchend", ".tile", Tile.handleTouch);
-	$(container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.handleMouse);
 	Tile.resize();
 })
