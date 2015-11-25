@@ -1,21 +1,34 @@
-function TileGesture(){
+function TileGesture(_type){
 	this.tiles = [];
 	this.realTiles = [];
 	this.created = _.now();
+	this.updated = _.now();
+	this.type = _type;
 }
 TileGesture.prototype = {
 	update : function(){
 		
 	},
-	updateWithTile : function(_tile){
-		
+	updateWith : function(_type, _tile, _dir, _x, _y, _eventType){
+		if(_type != this.type){
+			//meh! on verra plus tard les cas spéciaux
+		}
+		var updateFunc = this[_type + "Update"]
+		updateFunc && updateFunc(_tile, _dir, _eventType, _x, _y);
+		this.updated = _.now();
+	},
+	touchUpdate: function(_tile, _dir, _eventType, _x, _y){
+
+	},
+	keyboardUpdate: function(_tile, _dir){
+
+	},
+	clickUpdate: function(_tile){
+
 	},
 	startAt : function(_x, _y){
 	},
 	endAt : function(_x, _y){
-	},
-	updateWithDirection : function(_dir){
-
 	}
 }
 TileGesture.Init = function(_container){
@@ -25,7 +38,7 @@ TileGesture.Init = function(_container){
 	$(_container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.handleMouse);
 }
 TileGesture.ProcessEvent = function(_e){
-	var dir, tile, type;
+	var dir, tile, type, x, y;
 	switch(_e.type){
 		case "keydown":
 			type = TileGesture.KEYBOARD
@@ -33,21 +46,7 @@ TileGesture.ProcessEvent = function(_e){
 					? ['left','up','right','down']
 					: ['right','down','left','up'];
 			dir = dirs[event.keyCode - 37]; //arrows are keys 37-40
-			/*switch(event.keyCode) {
-				case 37:
-					dir = Tile.invertedDirs? 'left' : 'right';
-					break;
-				case 38:
-					dir = Tile.invertedDirs? 'up' : 'down';
-					break;
-				case 39:
-					dir = Tile.invertedDirs? 'right' : 'left';
-					break;
-				case 40:
-					dir = Tile.invertedDirs? 'down' : 'up';
-					break;
-			}*/
-			if(dir){
+			/*if(dir){
 				if(Tile.currentGesture)
 					tile = _.last(Tile.currentGesture.tiles);
 				else
@@ -57,12 +56,12 @@ TileGesture.ProcessEvent = function(_e){
 					dir = tile.el.prop("_gsTransform")
 					Tile.updateGesture("0", tile, tile.x, tile.y, _e.type);
 				}
-			}
+			}*/
 			break;
 		case "keyup":
 			type = TileGesture.KEYBOARD
 			if(TileGesture.Current)
-				TileGesture.Current.lastUpdated = _.now();
+				TileGesture.Current.updated = _.now();
 			break;
 		case "click":
 			type = TileGesture.CLICK
@@ -74,19 +73,20 @@ TileGesture.ProcessEvent = function(_e){
 			event.stopPropagation();
 			break;
 		case "touchstart":
-			type = TileGesture.TOUCH
-			break;
 		case "touchmove":
-			type = TileGesture.TOUCH
-			break;
 		case "touchend":
 			type = TileGesture.TOUCH
+			var t = _e.originalEvent.touches[0];
+			x = t.pageX;
+			y = t.pageY;
 			break;
 		case "mousedown":
+			type = TileGesture.TOUCH
+			x = _e.pageX;
+			y = _e.pageY;
 			Tile.currentGesture = null;
 			Tile.updateGesture(0, tile, _e.pageX, _e.pageY, "mouse");
 		    _e.preventDefault();
-		    return false;
 			break;
 		case "mousemove":
 			if(Tile.currentGesture){
@@ -107,7 +107,9 @@ TileGesture.ProcessEvent = function(_e){
 	if(dir || tile){
 		if(!TileGesture.Current)
 			TileGesture.Current = new TileGesture;
+		TileGesture.Current.updateWith(type, tile, dir, x, y, _e.type)
 	}
+	return false;
 }
 TileGesture.Current = null;
 TileGesture.CLICK = "click";
