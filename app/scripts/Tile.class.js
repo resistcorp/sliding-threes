@@ -406,7 +406,7 @@ Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
 		Tile.currentGesture = {
 			id: _id,
 			tiles: Tile.giveMeAnArray(),
-			overlays: Tile.giveMeAnArray(),
+			//overlays: Tile.giveMeAnArray(),
 			moves: Tile.giveMeAnArray(),
 			ended: false,
 			type: _type,
@@ -425,7 +425,7 @@ Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
 	Tile.currentGesture.lastUpdated = _.now();
 	if(Tile.currentGesture.tiles.length > 1){
 		var prev, last = _.last(Tile.currentGesture.tiles, 2);
-		Tile.arrayPool.push(last);
+		//Tile.arrayPool.push(last);
 		prev = last[0];
 		last = last[1];
 	}else{
@@ -725,8 +725,8 @@ Tile.Update = function() {
 	if($("#score").text() != str)
 		$("#score").text(str);
 	while(Tile.allDirtyClasses.length){
-		if(_.now() > start + 25){
-			return;
+		if(_.now() > start + 10){
+			break;
 		}
 		tile = Tile.allDirtyClasses.shift();
 		if(!tile.moving && tile.dirtyClass){
@@ -750,6 +750,17 @@ Tile.Update = function() {
 			alert("you won (TODO : better win screen).");
 		}
 	}
+	var update = TileGesture.Current && TileGesture.Current.update(_.now());
+	update *= 100;
+	if(isNaN(update))
+		update = 50;
+	update = Math.floor(update);
+	var top = (100 - update) *.5;
+	$('#timerStyle').html(
+		"#gameContainer::after{height : " + update + "%; top : " + top + "%;}\n" +
+		"#gameContainer::before{width : " + update + "%; left : " + top + "%;}"
+	);
+
 	if(Tile.currentGesture){
 		if(Tile.currentGesture.ended){
 			var now = _.now();

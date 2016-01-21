@@ -3,28 +3,39 @@ function TileGesture(_type){
 	this.realTiles = [];
 	this.created = _.now();
 	this.updated = _.now();
+	this.lastTile = null;
+	this.interval = 1500;
+	if(_type == TileGesture.KEYBOARD)
+		this.lastTile = Tile.hole;
 	this.type = _type;
 }
 TileGesture.prototype = {
-	update : function(){
-		
+	update : function(_now){
+		var part = (_now - this.updated) / this.interval,
+			tile;
+		if(part >= 1.0){
+			//pop a move
+			tile = this.realTiles;
+			this.updated = _now;
+		}
+		return part;
 	},
 	updateWith : function(_type, _tile, _dir, _x, _y, _eventType){
 		if(_type != this.type){
 			//meh! on verra plus tard les cas spéciaux
 		}
-		var updateFunc = this[_type + "Update"]
-		updateFunc && updateFunc(_tile, _dir, _eventType, _x, _y);
+		//var updateFunc = this[_type + "Update"]
+		//updateFunc && updateFunc(_tile, _dir, _eventType, _x, _y);
+		if(_tile){
+			if(_tile == _.last(this.realTiles)){
+				//remove last move
+				this.realTiles.pop();
+			}else{
+				this.realTiles.push(this.lastTile);
+			}
+			this.lastTile = _tile;
+		}
 		this.updated = _.now();
-	},
-	touchUpdate: function(_tile, _dir, _eventType, _x, _y){
-
-	},
-	keyboardUpdate: function(_tile, _dir){
-
-	},
-	clickUpdate: function(_tile){
-
 	},
 	startAt : function(_x, _y){
 	},
@@ -38,7 +49,7 @@ TileGesture.Init = function(_container){
 	$(_container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.handleMouse);
 }
 TileGesture.ProcessEvent = function(_e){
-	var dir, tile, type, x, y;
+	var dir, tile, type, x, y, ret = true;
 	switch(_e.type){
 		case "keydown":
 			type = TileGesture.KEYBOARD
@@ -46,6 +57,10 @@ TileGesture.ProcessEvent = function(_e){
 					? ['left','up','right','down']
 					: ['right','down','left','up'];
 			dir = dirs[event.keyCode - 37]; //arrows are keys 37-40
+			if(!this.lastTile)
+				this.lastTile = Tile.hole;
+			tile = this.lastTile.neighbors[Tile.DIRS.indexOf(dir)];
+
 			/*if(dir){
 				if(Tile.currentGesture)
 					tile = _.last(Tile.currentGesture.tiles);
@@ -66,14 +81,14 @@ TileGesture.ProcessEvent = function(_e){
 		case "click":
 			type = TileGesture.CLICK
 			tile = $(this).data('tile');
-			console.log( tile.tileColor, tile.moveList );
-			Tile.applyMoves(tile.moveList);
-			Tile.currentGesture = null;
+			/*Tile.applyMoves(tile.moveList);
+			Tile.currentGesture = null;*/
 			//TODO
 			event.stopPropagation();
 			break;
-		case "touchstart":
 		case "touchmove":
+			ret = false;
+		case "touchstart":
 		case "touchend":
 			type = TileGesture.TOUCH
 			var t = _e.originalEvent.touches[0];
@@ -106,10 +121,10 @@ TileGesture.ProcessEvent = function(_e){
 	}
 	if(dir || tile){
 		if(!TileGesture.Current)
-			TileGesture.Current = new TileGesture;
+			TileGesture.Current = new TileGesture(type);
 		TileGesture.Current.updateWith(type, tile, dir, x, y, _e.type)
 	}
-	return false;
+	return ret;
 }
 TileGesture.Current = null;
 TileGesture.CLICK = "click";

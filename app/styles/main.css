@@ -94,6 +94,9 @@ body.dark{
   margin-top: auto;
   /* overflow: hidden; */
 }
+.dark #gameOptions{
+  color: #333;
+}
 #gameOptions>.form{
   position: absolute;
   top: 50%;
@@ -367,4 +370,19 @@ body.dark{
 }
 .hole.moving>div{
   border-radius: 50%;
+}
+#gameContainer::after, #gameContainer::before{
+  content: "";
+  display: block;
+  position: absolute;
+  background: #0c0;
+  border-radius: 3px;
+}
+#gameContainer::after{
+  left: 100%;
+  width: 6px;
+}
+#gameContainer::before{
+  top: -6px;
+  height: 6px;
 }
