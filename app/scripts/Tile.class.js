@@ -755,6 +755,7 @@ Tile.Update = function() {
 	if(isNaN(update))
 		update = 50;
 	update = Math.floor(update);
+	update = 100;
 	var top = (100 - update) *.5;
 	$('#timerStyle').html(
 		"#gameContainer::after{height : " + update + "%; top : " + top + "%;}\n" +
