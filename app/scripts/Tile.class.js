@@ -294,6 +294,7 @@ Tile.prototype = {
 Tile.NUM_COLORS = 6;
 Tile.numColors = 6;
 Tile.DIRS = ["right","up","left","down"];
+Tile.OPPDIRS = ["right","up","down","left"];
 const 	left = 0,
 		down = 1,
 		right = 2,
@@ -685,6 +686,7 @@ Tile.randomInit = function() {
 	tl && tl.eventCallback("onComplete", Tile.Init, [$('#gameContainer'), w>>0, h>>0]);
 }
 Tile.Update = function() {
+	kd.tick();
 	Tile.lockdown = false;
 	var tile, tile2, list, totest, group;
 	var start = _.now();
@@ -750,16 +752,19 @@ Tile.Update = function() {
 			alert("you won (TODO : better win screen).");
 		}
 	}
-	var update = TileGesture.Current && TileGesture.Current.update(_.now());
-	update *= 100;
-	if(isNaN(update))
-		update = 50;
-	update = Math.floor(update);
-	update = 100;
-	var top = (100 - update) *.5;
+	var update = 1.0;
+	if(TileGesture.Current)
+		update = TileGesture.Current.update(_.now());
+	if(isNaN(update)){
+		Tile.applyMoves(update);
+		update = 1.0;
+	}
+	//update = 100;
+	update = Math.round(Tile.containerWidth * update);
+	var top = Math.round((Tile.containerWidth - update) *.5);
 	$('#timerStyle').html(
-		"#gameContainer::after{height : " + update + "%; top : " + top + "%;}\n" +
-		"#gameContainer::before{width : " + update + "%; left : " + top + "%;}"
+		"#gameContainer::after{height : " + (update + 8) + "px; top : " + (top -4) + "px;}\n" +
+		"#gameContainer::before{width : " + (update + 8) + "px; left : " + (top -4) + "px;}"
 	);
 
 	if(Tile.currentGesture){
