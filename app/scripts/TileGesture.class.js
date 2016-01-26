@@ -14,13 +14,15 @@ TG = TileGesture;
 
 TileGesture.prototype = {
 	update : function(_now){
-		var isd = kd.SPACE.isDown() || kd.ENTER.isDown(),
-			rate = isd ? 30 : this.interval / this.moves.length,
+		var rate = false ? 30 : this.interval / this.moves.length,
 			part = (_now - this.updated) / rate,
 			move, index;
 		if(part >= 1.0){
 			//pop a move
-			move = this.moves.shift()
+			move = this.moves.shift();
+			tile = this.moves.shift();
+			if(tile)
+				tile.prepareMove(1.0);
 			if(move){
 				this.updated = _now;
 				//this.interval *= .8;
@@ -28,28 +30,37 @@ TileGesture.prototype = {
 			}
 			this.ended = true;
 			this.lastTile = null;
-			TileGesture.Current = null;
+			TG.Current = null;
 			part = 1.0;
 		}
 		return part;
 	},
 	updateWithDirection : function(_dir, _tile){
 		var last = _.last(this.moves),
-			tile = this.lastTile || Tile.hole;
+			tile = this.lastTile || Tile.hole,
+			i;
 		
 		tile = tile.neighbors[Tile.DIRS.indexOf(_dir)];
 		if(tile){
 			this.lastTile = tile;
 			if(last && Tile.OPPDIRS.indexOf(last) == 3- Tile.OPPDIRS.indexOf(_dir)){
 				this.moves.pop();
-				this.tiles.splice(this.tiles.lastIndexOf(tile));
-				if(this.moves.length == 0)
+				this.tiles.pop().prepareMove(1.0).isHole = false;
+				this.tiles.pop().prepareMove(1.0).isHole = false;
+				if(this.moves.length == 0);
 					TG.Current = null;
 				return;
 			}
 			this.tiles.push(tile);
 			this.moves.push(_dir);
 			this.updated = _.now();
+			for(i = 0; i < this.tiles.length; ){
+				tile = this.tiles[i]
+				if(Tile.hole != tile)
+					tile.isHole = false;
+				tile.prepareMove(++i / this.tiles.length);
+			}
+			tile.isHole = true;
 		}
 	},
 	updateWithTile : function(_type, _tile, _x, _y, _eventType){
@@ -107,8 +118,8 @@ TG.ProcessEvent = function(_e){
 			break;
 		case "keyup":
 			type = TileGesture.KEYBOARD
-			//if(TileGesture.Current)
-				//TileGesture.Current.updated = _.now();
+			//if(TG.Current)
+				//TG.Current.updated = _.now();
 			break;
 		case "click":
 			type = TileGesture.CLICK
@@ -152,12 +163,12 @@ TG.ProcessEvent = function(_e){
 			break;
 	}
 	if(dir || tile){
-		if(!TileGesture.Current)
-			TileGesture.Current = new TileGesture(type);
+		if(!TG.Current)
+			TG.Current = new TileGesture(type);
 		if(dir)
-			TileGesture.Current.updateWithDirection(dir);
+			TG.Current.updateWithDirection(dir);
 		else
-			TileGesture.Current.updateWithTile(type, tile, x, y, _e.type);
+			TG.Current.updateWithTile(type, tile, x, y, _e.type);
 	}
 	return ret;
 }

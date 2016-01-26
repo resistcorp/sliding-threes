@@ -131,6 +131,8 @@ Tile.prototype = {
 			{
 				y: 5 + _y * 100 + 'px',
 				x: 5 + _x * 100 + 'px',
+				rotation : 0,
+				scale : 1.0,
 				//duration : 500,
 				className : this.class.join(' ') + " moving",
 				onComplete : this.arrive,
@@ -153,12 +155,18 @@ Tile.prototype = {
 		TweenMax.set(
 			this.el,
 			{
+				rotation : 0,
+				scale : 1.0,
 				y : 5 + _y * 100,
 				x : 5 + _x * 100
 			}
 		);
 		if(!_noUpdate)
 			this.update();
+	},
+	prepareMove: function(_part){
+		TweenMax.to(this.el, 0.5, {rotation : _part * 30, scale : _part * .5});
+		return this;
 	},
 	arrive:function() {
 		var index = Tile.moving.indexOf(this);
