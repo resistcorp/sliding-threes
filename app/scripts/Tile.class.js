@@ -165,10 +165,20 @@ Tile.prototype = {
 			this.update();
 	},
 	prepareMove: function(_part){
-		if(_part == -1)
-			TweenMax.to(this.el, 0.5, {rotation : 0, scale : 1.0});
-		else
-			TweenMax.to(this.el, 0.5, {rotation : 40 - _part * 30, scale : .25 + _part * .5});
+		if(this.currentMove != _part){
+			if(_part == -1){
+				TweenMax.to(this.el, 0.5, {rotation : 0, scale : 1.0});
+				this.moving = false;
+				this.removeClass('moving');
+				this.removeClass('turned');
+			}else{
+				TweenMax.to(this.el, 0.5, {rotation : 40 - _part * 30, scale : .25 + _part * .5});
+				this.moving = true;
+				this.addClass('turned');
+				this.addClass('moving');
+			}
+			this.currentMove = _part;
+		}
 		return this;
 	},
 	arrive:function() {

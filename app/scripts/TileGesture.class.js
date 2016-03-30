@@ -93,10 +93,14 @@ TileGesture.prototype = {
 	}
 }
 TG.Init = function(_container){
-	$(document.body).on("keydown keyup", TileGesture.ProcessEvent)
-	$(_container).on("click", ".tile", TileGesture.ProcessEvent)
-	$(_container).on("touchstart touchmove touchend", ".tile", Tile.handleTouch);
-	$(_container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.handleMouse);
+	if(!TG.Ready){
+		$(document.body).on("keydown keyup", TileGesture.ProcessEvent)
+		$(_container).on("click", ".tile", TileGesture.ProcessEvent)
+		//$(_container).on("touchstart touchmove touchend", ".tile", Tile.handleTouch);
+		//$(_container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.handleMouse);
+		TG.Ready = true;
+	}
+	TG.Current = null;
 }
 TG.ProcessEvent = function(_e){
 	var dir, tile, type, x, y, ret = true;
