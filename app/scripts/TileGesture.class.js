@@ -15,12 +15,12 @@ TG = TileGesture;
 TileGesture.prototype = {
 	update : function(_now){
 		var rate = false ? 30 : this.interval / this.moves.length,
-			part = (_now - this.updated) / rate,
+			part = this.ended ? 1.0 : 0.0,//(_now - this.updated) / rate,
 			move, index;
 		if(part >= 1.0){
 			//pop a move
 			move = this.moves.shift();
-			tile = this.moves.shift();
+			tile = this.tiles.shift();
 			if(tile)
 				tile.prepareMove(1.0);
 			if(move){
@@ -36,31 +36,35 @@ TileGesture.prototype = {
 		return part;
 	},
 	updateWithDirection : function(_dir, _tile){
+		if(this.ended) return;
 		var last = _.last(this.moves),
 			tile = this.lastTile || Tile.hole,
 			i;
 		
 		tile = tile.neighbors[Tile.DIRS.indexOf(_dir)];
+		//tile is the tile to _dir from last tile
 		if(tile){
-			this.lastTile = tile;
 			if(last && Tile.OPPDIRS.indexOf(last) == 3- Tile.OPPDIRS.indexOf(_dir)){
 				this.moves.pop();
-				this.tiles.pop().prepareMove(1.0).isHole = false;
-				this.tiles.pop().prepareMove(1.0).isHole = false;
-				if(this.moves.length == 0);
-					TG.Current = null;
-				return;
+				this.tiles.pop().prepareMove(-1);
+				this.lastTile = _.last(this.tiles);
+				//if(this.moves.length == 0);
+					//TG.Current = null;
+				//return;
+			}else{
+				this.lastTile = tile;
+				this.tiles.push(tile);
+				this.moves.push(_dir);
+				this.updated = _.now();
 			}
-			this.tiles.push(tile);
-			this.moves.push(_dir);
-			this.updated = _.now();
-			for(i = 0; i < this.tiles.length; ){
+			for(i = 0; i < this.tiles.length; ++i){
 				tile = this.tiles[i]
 				if(Tile.hole != tile)
 					tile.isHole = false;
-				tile.prepareMove(++i / this.tiles.length);
+				if(i == this.tiles.lastIndexOf(tile))
+					tile.prepareMove( ( 1 + i ) / this.tiles.length);
 			}
-			tile.isHole = true;
+			//tile.isHole = true;
 		}
 	},
 	updateWithTile : function(_type, _tile, _x, _y, _eventType){
@@ -103,6 +107,10 @@ TG.ProcessEvent = function(_e){
 					? ['left','up','right','down']
 					: ['right','down','left','up'];
 			dir = dirs[event.keyCode - 37]; //arrows are keys 37-40
+			if(event.keyCode == 13 && TG.Current){
+				TG.Current.ended = true;
+			}
+
 
 			/*if(dir){
 				if(Tile.currentGesture)

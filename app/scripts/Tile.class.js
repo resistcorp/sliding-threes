@@ -165,7 +165,10 @@ Tile.prototype = {
 			this.update();
 	},
 	prepareMove: function(_part){
-		TweenMax.to(this.el, 0.5, {rotation : _part * 30, scale : _part * .5});
+		if(_part == -1)
+			TweenMax.to(this.el, 0.5, {rotation : 0, scale : 1.0});
+		else
+			TweenMax.to(this.el, 0.5, {rotation : 40 - _part * 30, scale : .25 + _part * .5});
 		return this;
 	},
 	arrive:function() {
@@ -369,7 +372,7 @@ Tile.swap = function(_tile1, _tile2) {
 	_tile1.moveTo(_tile2.x,_tile2.y);
 	_tile2.moveTo(x,y);
 }
-Tile.handleMouse = function(_event){
+/*Tile.handleMouse = function(_event){
 	var tile = $(this).data('tile');
 	switch(_event.type){
 		case "mousedown":
@@ -468,7 +471,7 @@ Tile.endGesture = function(_id, _tile, pageX, pageY){
 	Tile.moves++;
 	Tile.currentGesture.nextMove = 0;
 	return Tile.currentGesture.ended = true;
-}
+}*/
 Tile.giveUp = function(_tile){
 	_tile.el.detach();
 	Tile.tileColor = -1;
@@ -775,7 +778,7 @@ Tile.Update = function() {
 		"#gameContainer::before{width : " + (update + 8) + "px; left : " + (top -4) + "px;}"
 	);
 
-	if(Tile.currentGesture){
+	/*if(Tile.currentGesture){
 		if(Tile.currentGesture.ended){
 			var now = _.now();
 			if(Tile.currentGesture.nextMove < now){
@@ -785,7 +788,7 @@ Tile.Update = function() {
 					if(Tile.currentGesture.moves.length < 25)
 						Tile.currentGesture.nextMove = now + 50;
 					else
-						Tile.currentGesture.nextMove = 0;
+						Tile.currentGesture.nextMove = now + 10;
 				}else{
 					Tile.currentGesture = null;
 					$('.tile').removeClass('moving');
@@ -793,7 +796,7 @@ Tile.Update = function() {
 			}
 		}else if(Tile.currentGesture.lastUpdated < _.now() - (350 + Tile.currentGesture.moves.length * 50))
 			Tile.endGesture();
-	}
+	}//*/
 }
 Tile.lockdown = true;
 Tile.isPlaying = true;
