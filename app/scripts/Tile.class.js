@@ -1,7 +1,8 @@
+'use strict';
 function Tile () {
-	this.dirtyClass = ["true"]
+	this.dirtyClass = ["true"];
 	this.el = $('<div class="tile" />');
-	this.child = $('<div class="dead" />')
+	this.child = $('<div class="dead" />');
 	this.el.append(this.child);
 	this.el.data('tile', this);
 	this.child.data('tile', this);
@@ -329,7 +330,7 @@ Tile.factory = function() {
 	return Tile.pool.pop() || new Tile();
 }
 Tile.giveMeAnArray = function() {
-	ret = Tile.arrayPool.pop() || [];
+	var ret = Tile.arrayPool.pop() || [];
 	ret.length = 0;
 	return ret;
 }
@@ -382,106 +383,6 @@ Tile.swap = function(_tile1, _tile2) {
 	_tile1.moveTo(_tile2.x,_tile2.y);
 	_tile2.moveTo(x,y);
 }
-/*Tile.handleMouse = function(_event){
-	var tile = $(this).data('tile');
-	switch(_event.type){
-		case "mousedown":
-			Tile.currentGesture = null;
-			Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
-		    _event.preventDefault();
-		    return false;
-			break;
-		case "mousemove":
-			if(Tile.currentGesture){
-				Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
-			    _event.preventDefault();
-			    return false;
-			}
-			break;
-		case "mouseenter":
-			if(Tile.currentGesture)
-				Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
-			break;
-		case "mouseup":
-			if(Tile.currentGesture)
-				Tile.endGesture(0, tile, _event.pageX, _event.pageY);
-			break;
-	}
-}
-Tile.handleTouch = function(_event){
-	var t = _event.originalEvent.touches[0],
-		div = t && document.elementFromPoint(t.pageX, t.pageY),
-		tile = div && $(div).data('tile');
-	if(tile)
-		Tile.updateGesture(t.identifier, tile, t.pageX, t.pageY, "touch");
-	else
-		Tile.endGesture();
-	if(_event.type == 'touchmove')//prevent
-		_event.preventDefault();
-}
-Tile.handleKey = function( _event ) {
-	if(_event.type == 'keydown' && _event.keyCode == 27)
-		$("#gameOptions").toggleClass('hide')
-}
-Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
-	if(!Tile.currentGesture){
-		Tile.currentGesture = {
-			id: _id,
-			tiles: Tile.giveMeAnArray(),
-			//overlays: Tile.giveMeAnArray(),
-			moves: Tile.giveMeAnArray(),
-			ended: false,
-			type: _type,
-			created: _.now(),
-			_startX: _pageX,
-			_startY: _pageY
-		}
-		if(_tile.moveList.length == 1){
-			Tile.currentGesture.tiles.push(Tile.hole);
-			//Tile.currentGesture.moves.push(_tile.moveList[0]);
-		}
-	}
-	if(Tile.currentGesture.id != _id){
-		//TODO
-	}
-	Tile.currentGesture.lastUpdated = _.now();
-	if(Tile.currentGesture.tiles.length > 1){
-		var prev, last = _.last(Tile.currentGesture.tiles, 2);
-		//Tile.arrayPool.push(last);
-		prev = last[0];
-		last = last[1];
-	}else{
-		last = _.last(Tile.currentGesture.tiles);
-	}
-	if(last != _tile){
-		if(_tile == prev){
-			//cancel a move
-			for(var tween of TweenMax.getTweensOf(last.el))
-				tween.progress(1.0);
-			last.el.removeClass('moving');
-			last.removeClass('moving');
-			Tile.currentGesture.moves.pop();
-			Tile.currentGesture.tiles.pop();
-		}else{
-			if(last){
-				var index = last.neighbors.indexOf(_tile);
-				if(index == -1)
-					return Tile.currentGesture.ended = true;
-				Tile.currentGesture.moves.push(Tile.DIRS[index]);
-			}
-			Tile.currentGesture.tiles.push(_tile);
-			for(var tween of TweenMax.getTweensOf(_tile.el))
-				tween.progress(1.0);
-			_tile.el.addClass('moving');
-			_tile.addClass('moving');
-		}
-	}
-}
-Tile.endGesture = function(_id, _tile, pageX, pageY){
-	Tile.moves++;
-	Tile.currentGesture.nextMove = 0;
-	return Tile.currentGesture.ended = true;
-}*/
 Tile.giveUp = function(_tile){
 	_tile.el.detach();
 	Tile.tileColor = -1;
@@ -518,13 +419,37 @@ Tile.releaseAll = function(){
 Tile.Init = function(_options) {
 	var avoid1, avoid2, tile, container,
 		options = _options ||{},
+		dur,
 		w = options.w || Tile.width,
 		h = options.h || Tile.height;
 	Tile.width = w;
 	Tile.height = h;
 	Tile.resize();
 	Tile.timeline = new TimelineLite();
-	container = options.container || $('#gameContainer')
+	container = options.container || $('#gameContainer');
+	switch(container[0].tagName.toUpperCase()){
+		case "DIV":
+			break;
+		case "CANVAS":
+			var canvas = container[0],
+				gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+			Tile.glContext = gl;
+			var squareVerticesBuffer = gl.createBuffer(),
+				vertices = [
+				1.0,  1.0,  0.0,
+				-1.0, 1.0,  0.0,
+				1.0,  -1.0, 0.0,
+				-1.0, -1.0, 0.0
+			];
+			Tile.program = initShaders(gl);
+
+			gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+			Tile.buffer = squareVerticesBuffer;
+			console.log(gl);
+			break;
+		default:
+	}
 	Tile.cols = Tile.giveMeAnArray();
 	Tile.rows = Tile.giveMeAnArray();
 	Tile.numColors = options.numColors ||Tile.NUM_COLORS
@@ -708,6 +633,21 @@ Tile.randomInit = function() {
 }
 Tile.Update = function() {
 	kd.tick();
+	if(Tile.glContext){
+		var gl = Tile.glContext,
+			buffer = Tile.buffer,
+			program = Tile.program,
+			perspectiveMatrix = makePerspective(45, 1, 0.1, 100.0);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+		loadIdentity();
+		mvTranslate([-0.0, 0.0, -6.0]);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+		setMatrixUniforms(gl, program, perspectiveMatrix);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+	}
 	Tile.lockdown = false;
 	var tile, tile2, list, totest, group;
 	var start = _.now();
@@ -821,4 +761,90 @@ Tile.dirties = Tile.giveMeAnArray();
 Tile.nextMoves = Tile.giveMeAnArray();
 Tile.allDirtyClasses = Tile.giveMeAnArray();
 Tile.threshold = 4;
-Tile.swapDirs(false)
+Tile.swapDirs(false);
+
+
+//TODO(Boris) : rewrite
+var mvMatrix, vertexPositionAttribute;
+function loadIdentity() {
+  mvMatrix = Matrix.I(4);
+}
+
+function multMatrix(m) {
+  mvMatrix = mvMatrix.x(m);
+}
+
+function mvTranslate(v) {
+  multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
+}
+
+function setMatrixUniforms(gl, shaderProgram, perspectiveMatrix) {
+  var pUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+  gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
+
+  var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+  gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
+}
+function initShaders(gl) {
+  var fragmentShader = getShader(gl, "shader-fs");
+  var vertexShader = getShader(gl, "shader-vs");
+  
+  // Créer le programme shader
+  
+  var shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+  
+  // Faire une alerte si le chargement du shader échoue
+  
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert("Impossible d'initialiser le shader.");
+  }
+  
+  gl.useProgram(shaderProgram);
+  
+  vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(vertexPositionAttribute);
+  return shaderProgram;
+}
+function getShader(gl, id) {
+    var shaderScript, theSource, currentChild, shader;
+    
+    shaderScript = document.getElementById(id);
+    
+    if (!shaderScript) {
+        return null;
+    }
+    
+    theSource = "";
+    currentChild = shaderScript.firstChild;
+    
+    while(currentChild) {
+        if (currentChild.nodeType == currentChild.TEXT_NODE) {
+            theSource += currentChild.textContent;
+        }
+        
+        currentChild = currentChild.nextSibling;
+    }
+	if (shaderScript.type == "x-shader/x-fragment") {
+		shader = gl.createShader(gl.FRAGMENT_SHADER);
+	} else if (shaderScript.type == "x-shader/x-vertex") {
+		shader = gl.createShader(gl.VERTEX_SHADER);
+	} else {
+	 // type de shader inconnu
+	 return null;
+	}
+	gl.shaderSource(shader, theSource);
+
+	// Compile le programme shader
+	gl.compileShader(shader);  
+
+	// Vérifie si la compilation s'est bien déroulée
+	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {  
+	  alert("Une erreur est survenue au cours de la compilation des shaders: " + gl.getShaderInfoLog(shader));
+	  return null;  
+	}
+
+	return shader;
+}
