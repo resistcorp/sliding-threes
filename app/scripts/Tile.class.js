@@ -434,17 +434,26 @@ Tile.Init = function(_options) {
 			var canvas = container[0],
 				gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 			Tile.glContext = gl;
-			var squareVerticesBuffer = gl.createBuffer(),
+			var squareVerticesBuffer = gl.createBuffer()/*,
 				vertices = [
-				1.0,  1.0,  0.0,
+				-0.1,  1.0,  0.0,
 				-1.0, 1.0,  0.0,
+				-0.2,  -1.0, 0.0,
+				-1.0, 1.0,  0.0,
+				-0.2,  -1.0, 0.0,
+				-1.0, -1.0, 0.0,
+
+				1.0,  1.0,  0.0,
+				0.1, 1.0,  0.0,
 				1.0,  -1.0, 0.0,
-				-1.0, -1.0, 0.0
-			];
+				0.1, 1.0,  0.0,
+				1.0,  -1.0, 0.0,
+				0.1, -1.0, 0.0
+			]*/;
 			Tile.program = initShaders(gl);
 
 			gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+			//gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 			Tile.buffer = squareVerticesBuffer;
 			console.log(gl);
 			break;
@@ -633,48 +642,57 @@ Tile.randomInit = function() {
 }
 Tile.Update = function() {
 	kd.tick();
+	Tile.lockdown = false;
 	if(Tile.glContext){
+		var start = _.now();
 		var gl = Tile.glContext,
 			buffer = Tile.buffer,
 			program = Tile.program,
-			perspectiveMatrix = makePerspective(45, 1, 0.1, 100.0);
+			perspectiveMatrix = makePerspective(45, 1, 0.1, 100.0),
+			data = renderAllTiles(Tile.all);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		loadIdentity();
-		mvTranslate([-0.0, 0.0, -6.0]);
+		mvTranslate([-3.0, -3.0, -11.0]);//TODO(Boris): calculate this!
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+
+
 		gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 		setMatrixUniforms(gl, program, perspectiveMatrix);
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		gl.drawArrays(gl.TRIANGLES, 0, ( Tile.all.length -1 )* 6);
+		console.log("rendertime : ", _.now() - start);
 	}
-	Tile.lockdown = false;
-	var tile, tile2, list, totest, group;
-	var start = _.now();
-	_.invoke(Tile.dirties, 'update');
-	Tile.releaseArray(Tile.dirties);
-	Tile.dirties = Tile.giveMeAnArray();
-	for(group of Tile.groups) {
-		if(group.dirty){
-			group.dirty = false;
-			totest = true;
-			if(group.length >= Tile.threshold){
-				group.sort(Tile.sortByClass);
-			}
-			for(tile of group){
-				if( group.length >= Tile.threshold){
-					tile.removeClass('almostGroup', 'noGroup');
-					tile.addClass('isGroup');
-					if(totest && tile.child.text() == ""){
-						totest = false;
-						tile.setText(group.length);
+	//else
+	{
+		var tile, tile2, list, totest, group;
+		var start = _.now();
+		_.invoke(Tile.dirties, 'update');
+		Tile.releaseArray(Tile.dirties);
+		Tile.dirties = Tile.giveMeAnArray();
+		for(group of Tile.groups) {
+			if(group.dirty){
+				group.dirty = false;
+				totest = true;
+				if(group.length >= Tile.threshold){
+					group.sort(Tile.sortByClass);
+				}
+				for(tile of group){
+					if( group.length >= Tile.threshold){
+						tile.removeClass('almostGroup', 'noGroup');
+						tile.addClass('isGroup');
+						if(totest && tile.child.text() == ""){
+							totest = false;
+							tile.setText(group.length);
+						}
+					}else if( group.length > 1){
+						tile.removeClass('isGroup', 'noGroup');
+						tile.addClass('almostGroup');
+					}else{
+						tile.removeClass('almostGroup', 'isGroup');
+						tile.addClass('noGroup')	
 					}
-				}else if( group.length > 1){
-					tile.removeClass('isGroup', 'noGroup');
-					tile.addClass('almostGroup');
-				}else{
-					tile.removeClass('almostGroup', 'isGroup');
-					tile.addClass('noGroup')	
 				}
 			}
 		}
@@ -847,4 +865,44 @@ function getShader(gl, id) {
 	}
 
 	return shader;
+}
+
+function renderAllTiles(tileArray){
+	var ret = new Float32Array( ( tileArray.length -1 ) * 6 * 3),
+	tile, x, y, offset, pastHole = false;
+	for(var i = 0; i < tileArray.length; ++i){
+		tile = tileArray[i];
+		if(tile.isHole) continue;
+		x = tile.x;
+		y = tile.y;
+		if(pastHole)
+			offset = (i-1) * 6 * 3;
+		else
+			offset = i * 6 * 3;
+		ret[offset +  0] = x - 0.48;
+		ret[offset +  1] = y - 0.48;
+		ret[offset +  2] = 0
+
+		ret[offset +  3] = x + 0.48;
+		ret[offset +  4] = y - 0.48;
+		ret[offset +  5] = 0;
+
+		ret[offset +  6] = x + 0.48;
+		ret[offset +  7] = y + 0.48;
+		ret[offset +  8] = 0
+
+		ret[offset +  9] = x - 0.48;
+		ret[offset + 10] = y + 0.48;
+		ret[offset + 11] = 0;
+
+		ret[offset + 12] = x - 0.48;
+		ret[offset + 13] = y - 0.48;
+		ret[offset + 14] = 0
+
+		ret[offset + 15] = x + 0.48;
+		ret[offset + 16] = y + 0.48;
+		ret[offset + 17] = 0;
+	}
+	console.log(ret);
+	return ret;
 }
