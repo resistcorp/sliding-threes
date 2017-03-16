@@ -1,7 +1,7 @@
 requirejs(["./lib/TweenMax.min.js","./Tile.class","./TileGesture.class"], function() {
 	console.log('go');
 	var container = $('#gameContainer'),
-		width = 7, height = 7;
+		width = 10, height = 10;
 	TweenMax.defaultOverwrite = "all";
 	Tile.Init(
 		{
