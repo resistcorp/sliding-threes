@@ -604,11 +604,11 @@ Tile.initColorUniform = function(isDark) {
 	var colorBuffer = new Float32Array(4 * Tile.numColors + 4), // + black for the hole
 		colors = isDark? Tile.DARK_COLORS : Tile.LIGHT_COLORS;
 
-	for(let i = 0; i < colors.length; ++i){
+	for(let i = 1; i < colors.length; ++i){
 		var color = colors[i];
 		var index =  (4 * i) + 4;
-		colorBuffer[index +0] = ( (color >> 2) & 0xF ) / 0xF;
-		colorBuffer[index +1] = ( (color >> 1) & 0xF ) / 0xF;
+		colorBuffer[index +0] = ( (color >> 8) & 0xF ) / 0xF;
+		colorBuffer[index +1] = ( (color >> 4) & 0xF ) / 0xF;
 		colorBuffer[index +2] = ( (color     ) & 0xF ) / 0xF;
 		colorBuffer[index +3] = 1.0;
 	}
@@ -659,12 +659,12 @@ Tile.Update = function() {
 			vertexBuffer = Tile.vBuffer,
 			colorBuffer = Tile.cBuffer,
 			program = Tile.program,
-			perspectiveMatrix = makePerspective(45, 1, 0.1, 100.0),
+			perspectiveMatrix = makePerspective(45, 1, 15, 25),
 			data = renderAllTiles(Tile.all);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		loadIdentity();
-		mvTranslate([-3.0, -3.0, -11.0]);//TODO(Boris): calculate this!
+		mvTranslate([-Tile.width / 2, Tile.height / 2, -20]);//TODO(Boris): calculate this!
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, data.vertices, gl.DYNAMIC_DRAW);
@@ -823,21 +823,13 @@ function setMatrixUniforms(gl, shaderProgram, perspectiveMatrix) {
   gl.uniformMatrix4fv(mvUniform, false, new Float32Array(Tile.mvMatrix.flatten()));
 }
 function initShaders(gl) {
-  var fragmentShader = getShader(gl, "shader-fs");
-  var vertexShader = getShader(gl, "shader-vs");
-  
-  // Créer le programme shader
-  
-  var shaderProgram = gl.createProgram();
+  let 	replaces = {"NUM_COLORS" : Tile.NUM_COLORS +1},
+  		fragmentShader = getShader(gl, "shader-fs", replaces),
+  		vertexShader = getShader(gl, "shader-vs", replaces),
+  		shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
   gl.attachShader(shaderProgram, fragmentShader);
   gl.linkProgram(shaderProgram);
-  
-  // Faire une alerte si le chargement du shader échoue
-  
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    alert("Impossible d'initialiser le shader.");
-  }
   
   gl.useProgram(shaderProgram);
   
@@ -848,8 +840,10 @@ function initShaders(gl) {
   gl.enableVertexAttribArray(Tile.vColorIndexAttribute);
   return shaderProgram;
 }
-function getShader(gl, id) {
+function getShader(gl, id, replaces) {
     var shaderScript, theSource, currentChild, shader;
+
+    replaces = replaces || {};
     
     shaderScript = document.getElementById(id);
     
@@ -867,6 +861,12 @@ function getShader(gl, id) {
         
         currentChild = currentChild.nextSibling;
     }
+
+    for(let s in replaces){
+    	theSource = theSource.replace(new RegExp("{" + s + "}", "g"), replaces[s]);
+    	
+    }
+
 	if (shaderScript.type == "x-shader/x-fragment") {
 		shader = gl.createShader(gl.FRAGMENT_SHADER);
 	} else if (shaderScript.type == "x-shader/x-vertex") {
@@ -896,38 +896,38 @@ function renderAllTiles(tileArray){
 	for(var i = 0; i < tileArray.length; ++i){
 		tile = tileArray[i];
 		x = tile.x;
-		y = tile.y;
+		y = -tile.y;
 
-		size = tile.moving ? 0.1 + 0.35 * tile.currentMove : 0.48;
+		size = tile.moving ? 0.25 + 0.10 * tile.currentMove : 0.48;
 
 		offset = i * 6 * 3;
 
 		retVertices[offset +  0] = x - size;
 		retVertices[offset +  1] = y - size;
-		retVertices[offset +  2] = 0
+		//retVertices[offset +  2] = 0
 
 		retVertices[offset +  3] = x + size;
 		retVertices[offset +  4] = y - size;
-		retVertices[offset +  5] = 0;
+		//retVertices[offset +  5] = 0;
 
 		retVertices[offset +  6] = x + size;
 		retVertices[offset +  7] = y + size;
-		retVertices[offset +  8] = 0
+		//retVertices[offset +  8] = 0
 
 		retVertices[offset +  9] = x - size;
 		retVertices[offset + 10] = y + size;
-		retVertices[offset + 11] = 0;
+		//retVertices[offset + 11] = 0;
 
 		retVertices[offset + 12] = x - size;
 		retVertices[offset + 13] = y - size;
-		retVertices[offset + 14] = 0
+		//retVertices[offset + 14] = 0
 
 		retVertices[offset + 15] = x + size;
 		retVertices[offset + 16] = y + size;
-		retVertices[offset + 17] = 0;
+		//retVertices[offset + 17] = 0;
 
 		for( let j = 6*i; j < 6*i + 6; ++j)
-			retColors[j] = +tile.tileColor +1;//force int value
+			retColors[j] = parseInt(tile.tileColor) +2.01;//force int value
 	}
 	//console.log(retVertices);
 	//console.log(retColors);

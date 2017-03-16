@@ -40,12 +40,12 @@
     
       uniform mat4 uMVMatrix;
       uniform mat4 uPMatrix;
-      uniform vec4 uColors[7];
+      uniform vec4 uColors[{NUM_COLORS}];
       
       varying lowp vec4 vColor;
     
       void main(void) {
-        int index = int(aVertexColorIndex);
+        int index = int(floor(aVertexColorIndex));
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         vColor = uColors[index];
         //vColor = uColors[2];
@@ -57,7 +57,7 @@
       varying lowp vec4 vColor;
       
       void main(void) {
-        gl_FragColor = vColor;
+        gl_FragColor = vColor.rgba;
         //gl_FragColor = vec4(1.0);
       }
   </script>
