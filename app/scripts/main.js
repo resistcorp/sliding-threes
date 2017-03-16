@@ -17,7 +17,9 @@ requirejs(["./lib/TweenMax.min.js","./Tile.class","./TileGesture.class"], functi
 	});
 	$("#dirCheck").on("change", Tile.swapDirs)
 	$("#darkCheck").on("change", function() {
-		if($(document.body).hasClass('dark'))
+		toLight = $(document.body).hasClass('dark');
+		_.delay(Tile.SwapColors, 1250, toLight);
+		if(toLight)
 			TweenMax.to($(document.body), 2.5, {className : ''});
 		else
 			TweenMax.to($(document.body), 2.5, {className : 'dark'});

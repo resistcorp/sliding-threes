@@ -312,7 +312,9 @@ Tile.prototype = {
 		}
 	}
 };
-//Tile.COLORS = ["#F00", "#0F0", "#00F", "#FF0", "#0FF", "#F0F"];
+Tile.LIGHT_COLORS = [0x000, 0xA00, 0x0A0, 0x00A, 0xAA0, 0x0AA, 0xA0D];
+Tile.DARK_COLORS  = [0x000, 0xF88, 0x8F8, 0x88F, 0xFF8, 0x8FF, 0xF8F];
+
 Tile.NUM_COLORS = 6;
 Tile.numColors = 6;
 Tile.DIRS = ["right","up","left","down"];
@@ -426,6 +428,13 @@ Tile.Init = function(_options) {
 	Tile.height = h;
 	Tile.resize();
 	Tile.timeline = new TimelineLite();
+	Tile.cols = Tile.giveMeAnArray();
+	Tile.rows = Tile.giveMeAnArray();
+	Tile.numColors = options.numColors ||Tile.NUM_COLORS
+	var colors = Array();
+	for(var i= 0; i < Tile.numColors; i++){
+		colors[i] = false;
+	}
 	container = options.container || $('#gameContainer');
 	switch(container[0].tagName.toUpperCase()){
 		case "DIV":
@@ -434,37 +443,20 @@ Tile.Init = function(_options) {
 			var canvas = container[0],
 				gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 			Tile.glContext = gl;
-			var squareVerticesBuffer = gl.createBuffer()/*,
-				vertices = [
-				-0.1,  1.0,  0.0,
-				-1.0, 1.0,  0.0,
-				-0.2,  -1.0, 0.0,
-				-1.0, 1.0,  0.0,
-				-0.2,  -1.0, 0.0,
-				-1.0, -1.0, 0.0,
+			var vBuffer = gl.createBuffer(),
+				cBuffer = gl.createBuffer();
 
-				1.0,  1.0,  0.0,
-				0.1, 1.0,  0.0,
-				1.0,  -1.0, 0.0,
-				0.1, 1.0,  0.0,
-				1.0,  -1.0, 0.0,
-				0.1, -1.0, 0.0
-			]*/;
 			Tile.program = initShaders(gl);
+			Tile.initColorUniform(Tile.isDark);
 
-			gl.bindBuffer(gl.ARRAY_BUFFER, squareVerticesBuffer);
-			//gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-			Tile.buffer = squareVerticesBuffer;
+			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+			Tile.vBuffer = vBuffer;
+			Tile.cBuffer = cBuffer;
+			//Tile.colorAttribute = gl.getAttribLocation(Tile.program, "aVertexColor");
+			//Tile.colorIndexAttribute = gl.getAttribLocation(Tile.program, "aVertexColorIndex");
 			console.log(gl);
 			break;
 		default:
-	}
-	Tile.cols = Tile.giveMeAnArray();
-	Tile.rows = Tile.giveMeAnArray();
-	Tile.numColors = options.numColors ||Tile.NUM_COLORS
-	var colors = Array();
-	for(var i= 0; i < Tile.numColors; i++){
-		colors[i] = false;
 	}
 	var remove = _.random(w * h -1),
 		arr = Tile.giveMeAnArray();
@@ -604,6 +596,24 @@ Tile.checkSizes = function(_e) {
 		$("#colorsInput").val(v);
 	}
 }
+Tile.SwapColors = function() {
+	Tile.isDark = ! Tile.isDark;
+	Tile.initColorUniform(Tile.isDark);
+}
+Tile.initColorUniform = function(isDark) {
+	var colorBuffer = new Float32Array(4 * Tile.numColors + 4), // + black for the hole
+		colors = isDark? Tile.DARK_COLORS : Tile.LIGHT_COLORS;
+
+	for(let i = 0; i < colors.length; ++i){
+		var color = colors[i];
+		var index =  (4 * i) + 4;
+		colorBuffer[index +0] = ( (color >> 2) & 0xF ) / 0xF;
+		colorBuffer[index +1] = ( (color >> 1) & 0xF ) / 0xF;
+		colorBuffer[index +2] = ( (color     ) & 0xF ) / 0xF;
+		colorBuffer[index +3] = 1.0;
+	}
+	Tile.colorsUniformBuffer = colorBuffer;
+}
 Tile.restart = function() {
 	if(Tile.lockdown)
 		return;
@@ -646,7 +656,8 @@ Tile.Update = function() {
 	if(Tile.glContext){
 		var start = _.now();
 		var gl = Tile.glContext,
-			buffer = Tile.buffer,
+			vertexBuffer = Tile.vBuffer,
+			colorBuffer = Tile.cBuffer,
 			program = Tile.program,
 			perspectiveMatrix = makePerspective(45, 1, 0.1, 100.0),
 			data = renderAllTiles(Tile.all);
@@ -655,13 +666,21 @@ Tile.Update = function() {
 		loadIdentity();
 		mvTranslate([-3.0, -3.0, -11.0]);//TODO(Boris): calculate this!
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-		gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, data.vertices, gl.DYNAMIC_DRAW);
+		gl.vertexAttribPointer(Tile.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 
+		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, data.colors, gl.DYNAMIC_DRAW);
+		gl.vertexAttribPointer(Tile.vColorIndexAttribute, 1, gl.FLOAT, false, 0, 0);
 
-		gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
 		setMatrixUniforms(gl, program, perspectiveMatrix);
-		gl.drawArrays(gl.TRIANGLES, 0, ( Tile.all.length -1 )* 6);
+
+		var colorUniform = gl.getUniformLocation(Tile.program, "uColors");
+		gl.uniform4fv(colorUniform, Tile.colorsUniformBuffer);
+		//console.log(Tile.colorsUniformBuffer);
+
+		gl.drawArrays(gl.TRIANGLES, 0, (Tile.all.length)* 6);
 		console.log("rendertime : ", _.now() - start);
 	}
 	//else
@@ -779,17 +798,17 @@ Tile.dirties = Tile.giveMeAnArray();
 Tile.nextMoves = Tile.giveMeAnArray();
 Tile.allDirtyClasses = Tile.giveMeAnArray();
 Tile.threshold = 4;
+Tile.isDark = true;
 Tile.swapDirs(false);
 
 
 //TODO(Boris) : rewrite
-var mvMatrix, vertexPositionAttribute;
 function loadIdentity() {
-  mvMatrix = Matrix.I(4);
+  Tile.mvMatrix = Matrix.I(4);
 }
 
 function multMatrix(m) {
-  mvMatrix = mvMatrix.x(m);
+  Tile.mvMatrix = Tile.mvMatrix.x(m);
 }
 
 function mvTranslate(v) {
@@ -801,7 +820,7 @@ function setMatrixUniforms(gl, shaderProgram, perspectiveMatrix) {
   gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
 
   var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-  gl.uniformMatrix4fv(mvUniform, false, new Float32Array(mvMatrix.flatten()));
+  gl.uniformMatrix4fv(mvUniform, false, new Float32Array(Tile.mvMatrix.flatten()));
 }
 function initShaders(gl) {
   var fragmentShader = getShader(gl, "shader-fs");
@@ -822,8 +841,11 @@ function initShaders(gl) {
   
   gl.useProgram(shaderProgram);
   
-  vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-  gl.enableVertexAttribArray(vertexPositionAttribute);
+  Tile.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(Tile.vertexPositionAttribute);
+
+  Tile.vColorIndexAttribute = gl.getAttribLocation(shaderProgram, "aVertexColorIndex");
+  gl.enableVertexAttribArray(Tile.vColorIndexAttribute);
   return shaderProgram;
 }
 function getShader(gl, id) {
@@ -868,41 +890,46 @@ function getShader(gl, id) {
 }
 
 function renderAllTiles(tileArray){
-	var ret = new Float32Array( ( tileArray.length -1 ) * 6 * 3),
-	tile, x, y, offset, pastHole = false;
+	var retVertices = new Float32Array(  tileArray.length * 6 * 3),
+		retColors = new Float32Array(tileArray.length * 6),
+		tile, x, y, offset, size;
 	for(var i = 0; i < tileArray.length; ++i){
 		tile = tileArray[i];
-		if(tile.isHole) continue;
 		x = tile.x;
 		y = tile.y;
-		if(pastHole)
-			offset = (i-1) * 6 * 3;
-		else
-			offset = i * 6 * 3;
-		ret[offset +  0] = x - 0.48;
-		ret[offset +  1] = y - 0.48;
-		ret[offset +  2] = 0
 
-		ret[offset +  3] = x + 0.48;
-		ret[offset +  4] = y - 0.48;
-		ret[offset +  5] = 0;
+		size = tile.moving ? 0.1 + 0.35 * tile.currentMove : 0.48;
 
-		ret[offset +  6] = x + 0.48;
-		ret[offset +  7] = y + 0.48;
-		ret[offset +  8] = 0
+		offset = i * 6 * 3;
 
-		ret[offset +  9] = x - 0.48;
-		ret[offset + 10] = y + 0.48;
-		ret[offset + 11] = 0;
+		retVertices[offset +  0] = x - size;
+		retVertices[offset +  1] = y - size;
+		retVertices[offset +  2] = 0
 
-		ret[offset + 12] = x - 0.48;
-		ret[offset + 13] = y - 0.48;
-		ret[offset + 14] = 0
+		retVertices[offset +  3] = x + size;
+		retVertices[offset +  4] = y - size;
+		retVertices[offset +  5] = 0;
 
-		ret[offset + 15] = x + 0.48;
-		ret[offset + 16] = y + 0.48;
-		ret[offset + 17] = 0;
+		retVertices[offset +  6] = x + size;
+		retVertices[offset +  7] = y + size;
+		retVertices[offset +  8] = 0
+
+		retVertices[offset +  9] = x - size;
+		retVertices[offset + 10] = y + size;
+		retVertices[offset + 11] = 0;
+
+		retVertices[offset + 12] = x - size;
+		retVertices[offset + 13] = y - size;
+		retVertices[offset + 14] = 0
+
+		retVertices[offset + 15] = x + size;
+		retVertices[offset + 16] = y + size;
+		retVertices[offset + 17] = 0;
+
+		for( let j = 6*i; j < 6*i + 6; ++j)
+			retColors[j] = +tile.tileColor +1;//force int value
 	}
-	console.log(ret);
-	return ret;
+	//console.log(retVertices);
+	//console.log(retColors);
+	return {vertices : retVertices, colors: retColors};
 }
