@@ -1,7 +1,8 @@
+'use strict';
 function Tile () {
-	this.dirtyClass = ["true"]
+	this.dirtyClass = ["true"];
 	this.el = $('<div class="tile" />');
-	this.child = $('<div class="dead" />')
+	this.child = $('<div class="dead" />');
 	this.el.append(this.child);
 	this.el.data('tile', this);
 	this.child.data('tile', this);
@@ -311,7 +312,9 @@ Tile.prototype = {
 		}
 	}
 };
-//Tile.COLORS = ["#F00", "#0F0", "#00F", "#FF0", "#0FF", "#F0F"];
+Tile.LIGHT_COLORS = [0x000, 0xA00, 0x0A0, 0x00A, 0xAA0, 0x0AA, 0xA0D];
+Tile.DARK_COLORS  = [0x000, 0xF88, 0x8F8, 0x88F, 0xFF8, 0x8FF, 0xF8F];
+
 Tile.NUM_COLORS = 6;
 Tile.numColors = 6;
 Tile.DIRS = ["right","up","left","down"];
@@ -329,7 +332,7 @@ Tile.factory = function() {
 	return Tile.pool.pop() || new Tile();
 }
 Tile.giveMeAnArray = function() {
-	ret = Tile.arrayPool.pop() || [];
+	var ret = Tile.arrayPool.pop() || [];
 	ret.length = 0;
 	return ret;
 }
@@ -382,106 +385,6 @@ Tile.swap = function(_tile1, _tile2) {
 	_tile1.moveTo(_tile2.x,_tile2.y);
 	_tile2.moveTo(x,y);
 }
-/*Tile.handleMouse = function(_event){
-	var tile = $(this).data('tile');
-	switch(_event.type){
-		case "mousedown":
-			Tile.currentGesture = null;
-			Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
-		    _event.preventDefault();
-		    return false;
-			break;
-		case "mousemove":
-			if(Tile.currentGesture){
-				Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
-			    _event.preventDefault();
-			    return false;
-			}
-			break;
-		case "mouseenter":
-			if(Tile.currentGesture)
-				Tile.updateGesture(0, tile, _event.pageX, _event.pageY, "mouse");
-			break;
-		case "mouseup":
-			if(Tile.currentGesture)
-				Tile.endGesture(0, tile, _event.pageX, _event.pageY);
-			break;
-	}
-}
-Tile.handleTouch = function(_event){
-	var t = _event.originalEvent.touches[0],
-		div = t && document.elementFromPoint(t.pageX, t.pageY),
-		tile = div && $(div).data('tile');
-	if(tile)
-		Tile.updateGesture(t.identifier, tile, t.pageX, t.pageY, "touch");
-	else
-		Tile.endGesture();
-	if(_event.type == 'touchmove')//prevent
-		_event.preventDefault();
-}
-Tile.handleKey = function( _event ) {
-	if(_event.type == 'keydown' && _event.keyCode == 27)
-		$("#gameOptions").toggleClass('hide')
-}
-Tile.updateGesture = function(_id, _tile, _pageX, _pageY, _type){
-	if(!Tile.currentGesture){
-		Tile.currentGesture = {
-			id: _id,
-			tiles: Tile.giveMeAnArray(),
-			//overlays: Tile.giveMeAnArray(),
-			moves: Tile.giveMeAnArray(),
-			ended: false,
-			type: _type,
-			created: _.now(),
-			_startX: _pageX,
-			_startY: _pageY
-		}
-		if(_tile.moveList.length == 1){
-			Tile.currentGesture.tiles.push(Tile.hole);
-			//Tile.currentGesture.moves.push(_tile.moveList[0]);
-		}
-	}
-	if(Tile.currentGesture.id != _id){
-		//TODO
-	}
-	Tile.currentGesture.lastUpdated = _.now();
-	if(Tile.currentGesture.tiles.length > 1){
-		var prev, last = _.last(Tile.currentGesture.tiles, 2);
-		//Tile.arrayPool.push(last);
-		prev = last[0];
-		last = last[1];
-	}else{
-		last = _.last(Tile.currentGesture.tiles);
-	}
-	if(last != _tile){
-		if(_tile == prev){
-			//cancel a move
-			for(var tween of TweenMax.getTweensOf(last.el))
-				tween.progress(1.0);
-			last.el.removeClass('moving');
-			last.removeClass('moving');
-			Tile.currentGesture.moves.pop();
-			Tile.currentGesture.tiles.pop();
-		}else{
-			if(last){
-				var index = last.neighbors.indexOf(_tile);
-				if(index == -1)
-					return Tile.currentGesture.ended = true;
-				Tile.currentGesture.moves.push(Tile.DIRS[index]);
-			}
-			Tile.currentGesture.tiles.push(_tile);
-			for(var tween of TweenMax.getTweensOf(_tile.el))
-				tween.progress(1.0);
-			_tile.el.addClass('moving');
-			_tile.addClass('moving');
-		}
-	}
-}
-Tile.endGesture = function(_id, _tile, pageX, pageY){
-	Tile.moves++;
-	Tile.currentGesture.nextMove = 0;
-	return Tile.currentGesture.ended = true;
-}*/
 Tile.giveUp = function(_tile){
 	_tile.el.detach();
 	Tile.tileColor = -1;
@@ -518,19 +421,42 @@ Tile.releaseAll = function(){
 Tile.Init = function(_options) {
 	var avoid1, avoid2, tile, container,
 		options = _options ||{},
+		dur,
 		w = options.w || Tile.width,
 		h = options.h || Tile.height;
 	Tile.width = w;
 	Tile.height = h;
 	Tile.resize();
 	Tile.timeline = new TimelineLite();
-	container = options.container || $('#gameContainer')
 	Tile.cols = Tile.giveMeAnArray();
 	Tile.rows = Tile.giveMeAnArray();
 	Tile.numColors = options.numColors ||Tile.NUM_COLORS
 	var colors = Array();
 	for(var i= 0; i < Tile.numColors; i++){
 		colors[i] = false;
+	}
+	container = options.container || $('#gameContainer');
+	switch(container[0].tagName.toUpperCase()){
+		case "DIV":
+			break;
+		case "CANVAS":
+			var canvas = container[0],
+				gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+			Tile.glContext = gl;
+			var vBuffer = gl.createBuffer(),
+				cBuffer = gl.createBuffer();
+
+			Tile.program = initShaders(gl);
+			Tile.initColorUniform(Tile.isDark);
+
+			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+			Tile.vBuffer = vBuffer;
+			Tile.cBuffer = cBuffer;
+			//Tile.colorAttribute = gl.getAttribLocation(Tile.program, "aVertexColor");
+			//Tile.colorIndexAttribute = gl.getAttribLocation(Tile.program, "aVertexColorIndex");
+			console.log(gl);
+			break;
+		default:
 	}
 	var remove = _.random(w * h -1),
 		arr = Tile.giveMeAnArray();
@@ -670,6 +596,24 @@ Tile.checkSizes = function(_e) {
 		$("#colorsInput").val(v);
 	}
 }
+Tile.SwapColors = function() {
+	Tile.isDark = ! Tile.isDark;
+	Tile.initColorUniform(Tile.isDark);
+}
+Tile.initColorUniform = function(isDark) {
+	var colorBuffer = new Float32Array(4 * Tile.numColors + 4), // + black for the hole
+		colors = isDark? Tile.DARK_COLORS : Tile.LIGHT_COLORS;
+
+	for(let i = 0; i < colors.length; ++i){
+		var color = colors[i];
+		var index =  (4 * i) + 4;
+		colorBuffer[index +0] = ( (color >> 2) & 0xF ) / 0xF;
+		colorBuffer[index +1] = ( (color >> 1) & 0xF ) / 0xF;
+		colorBuffer[index +2] = ( (color     ) & 0xF ) / 0xF;
+		colorBuffer[index +3] = 1.0;
+	}
+	Tile.colorsUniformBuffer = colorBuffer;
+}
 Tile.restart = function() {
 	if(Tile.lockdown)
 		return;
@@ -709,32 +653,65 @@ Tile.randomInit = function() {
 Tile.Update = function() {
 	kd.tick();
 	Tile.lockdown = false;
-	var tile, tile2, list, totest, group;
-	var start = _.now();
-	_.invoke(Tile.dirties, 'update');
-	Tile.releaseArray(Tile.dirties);
-	Tile.dirties = Tile.giveMeAnArray();
-	for(group of Tile.groups) {
-		if(group.dirty){
-			group.dirty = false;
-			totest = true;
-			if(group.length >= Tile.threshold){
-				group.sort(Tile.sortByClass);
-			}
-			for(tile of group){
-				if( group.length >= Tile.threshold){
-					tile.removeClass('almostGroup', 'noGroup');
-					tile.addClass('isGroup');
-					if(totest && tile.child.text() == ""){
-						totest = false;
-						tile.setText(group.length);
+	if(Tile.glContext){
+		var start = _.now();
+		var gl = Tile.glContext,
+			vertexBuffer = Tile.vBuffer,
+			colorBuffer = Tile.cBuffer,
+			program = Tile.program,
+			perspectiveMatrix = makePerspective(45, 1, 0.1, 100.0),
+			data = renderAllTiles(Tile.all);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+		loadIdentity();
+		mvTranslate([-3.0, -3.0, -11.0]);//TODO(Boris): calculate this!
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, data.vertices, gl.DYNAMIC_DRAW);
+		gl.vertexAttribPointer(Tile.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, data.colors, gl.DYNAMIC_DRAW);
+		gl.vertexAttribPointer(Tile.vColorIndexAttribute, 1, gl.FLOAT, false, 0, 0);
+
+		setMatrixUniforms(gl, program, perspectiveMatrix);
+
+		var colorUniform = gl.getUniformLocation(Tile.program, "uColors");
+		gl.uniform4fv(colorUniform, Tile.colorsUniformBuffer);
+		//console.log(Tile.colorsUniformBuffer);
+
+		gl.drawArrays(gl.TRIANGLES, 0, (Tile.all.length)* 6);
+		console.log("rendertime : ", _.now() - start);
+	}
+	//else
+	{
+		var tile, tile2, list, totest, group;
+		var start = _.now();
+		_.invoke(Tile.dirties, 'update');
+		Tile.releaseArray(Tile.dirties);
+		Tile.dirties = Tile.giveMeAnArray();
+		for(group of Tile.groups) {
+			if(group.dirty){
+				group.dirty = false;
+				totest = true;
+				if(group.length >= Tile.threshold){
+					group.sort(Tile.sortByClass);
+				}
+				for(tile of group){
+					if( group.length >= Tile.threshold){
+						tile.removeClass('almostGroup', 'noGroup');
+						tile.addClass('isGroup');
+						if(totest && tile.child.text() == ""){
+							totest = false;
+							tile.setText(group.length);
+						}
+					}else if( group.length > 1){
+						tile.removeClass('isGroup', 'noGroup');
+						tile.addClass('almostGroup');
+					}else{
+						tile.removeClass('almostGroup', 'isGroup');
+						tile.addClass('noGroup')	
 					}
-				}else if( group.length > 1){
-					tile.removeClass('isGroup', 'noGroup');
-					tile.addClass('almostGroup');
-				}else{
-					tile.removeClass('almostGroup', 'isGroup');
-					tile.addClass('noGroup')	
 				}
 			}
 		}
@@ -821,4 +798,138 @@ Tile.dirties = Tile.giveMeAnArray();
 Tile.nextMoves = Tile.giveMeAnArray();
 Tile.allDirtyClasses = Tile.giveMeAnArray();
 Tile.threshold = 4;
-Tile.swapDirs(false)
+Tile.isDark = true;
+Tile.swapDirs(false);
+
+
+//TODO(Boris) : rewrite
+function loadIdentity() {
+  Tile.mvMatrix = Matrix.I(4);
+}
+
+function multMatrix(m) {
+  Tile.mvMatrix = Tile.mvMatrix.x(m);
+}
+
+function mvTranslate(v) {
+  multMatrix(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
+}
+
+function setMatrixUniforms(gl, shaderProgram, perspectiveMatrix) {
+  var pUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+  gl.uniformMatrix4fv(pUniform, false, new Float32Array(perspectiveMatrix.flatten()));
+
+  var mvUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+  gl.uniformMatrix4fv(mvUniform, false, new Float32Array(Tile.mvMatrix.flatten()));
+}
+function initShaders(gl) {
+  var fragmentShader = getShader(gl, "shader-fs");
+  var vertexShader = getShader(gl, "shader-vs");
+  
+  // Créer le programme shader
+  
+  var shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+  
+  // Faire une alerte si le chargement du shader échoue
+  
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    alert("Impossible d'initialiser le shader.");
+  }
+  
+  gl.useProgram(shaderProgram);
+  
+  Tile.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  gl.enableVertexAttribArray(Tile.vertexPositionAttribute);
+
+  Tile.vColorIndexAttribute = gl.getAttribLocation(shaderProgram, "aVertexColorIndex");
+  gl.enableVertexAttribArray(Tile.vColorIndexAttribute);
+  return shaderProgram;
+}
+function getShader(gl, id) {
+    var shaderScript, theSource, currentChild, shader;
+    
+    shaderScript = document.getElementById(id);
+    
+    if (!shaderScript) {
+        return null;
+    }
+    
+    theSource = "";
+    currentChild = shaderScript.firstChild;
+    
+    while(currentChild) {
+        if (currentChild.nodeType == currentChild.TEXT_NODE) {
+            theSource += currentChild.textContent;
+        }
+        
+        currentChild = currentChild.nextSibling;
+    }
+	if (shaderScript.type == "x-shader/x-fragment") {
+		shader = gl.createShader(gl.FRAGMENT_SHADER);
+	} else if (shaderScript.type == "x-shader/x-vertex") {
+		shader = gl.createShader(gl.VERTEX_SHADER);
+	} else {
+	 // type de shader inconnu
+	 return null;
+	}
+	gl.shaderSource(shader, theSource);
+
+	// Compile le programme shader
+	gl.compileShader(shader);  
+
+	// Vérifie si la compilation s'est bien déroulée
+	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {  
+	  alert("Une erreur est survenue au cours de la compilation des shaders: " + gl.getShaderInfoLog(shader));
+	  return null;  
+	}
+
+	return shader;
+}
+
+function renderAllTiles(tileArray){
+	var retVertices = new Float32Array(  tileArray.length * 6 * 3),
+		retColors = new Float32Array(tileArray.length * 6),
+		tile, x, y, offset, size;
+	for(var i = 0; i < tileArray.length; ++i){
+		tile = tileArray[i];
+		x = tile.x;
+		y = tile.y;
+
+		size = tile.moving ? 0.1 + 0.35 * tile.currentMove : 0.48;
+
+		offset = i * 6 * 3;
+
+		retVertices[offset +  0] = x - size;
+		retVertices[offset +  1] = y - size;
+		retVertices[offset +  2] = 0
+
+		retVertices[offset +  3] = x + size;
+		retVertices[offset +  4] = y - size;
+		retVertices[offset +  5] = 0;
+
+		retVertices[offset +  6] = x + size;
+		retVertices[offset +  7] = y + size;
+		retVertices[offset +  8] = 0
+
+		retVertices[offset +  9] = x - size;
+		retVertices[offset + 10] = y + size;
+		retVertices[offset + 11] = 0;
+
+		retVertices[offset + 12] = x - size;
+		retVertices[offset + 13] = y - size;
+		retVertices[offset + 14] = 0
+
+		retVertices[offset + 15] = x + size;
+		retVertices[offset + 16] = y + size;
+		retVertices[offset + 17] = 0;
+
+		for( let j = 6*i; j < 6*i + 6; ++j)
+			retColors[j] = +tile.tileColor +1;//force int value
+	}
+	//console.log(retVertices);
+	//console.log(retColors);
+	return {vertices : retVertices, colors: retColors};
+}

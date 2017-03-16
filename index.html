@@ -28,10 +28,40 @@
   <script src="scripts/TileGesture.class.js"></script>
    <script src="scripts/Tile.class.js"></script> -->
     <script src="lib/keydrown.min.js"></script>
+    <script src="lib/Sylvester/sylvester.js"></script>
+    <script src="lib/glUtils.js"></script>
     <script data-main="scripts/main" src="lib/require.js"></script>
     <style id="timerStyle" type="text/css"></style>
     <!-- endbuild -->
+  
+  <script id="shader-vs" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute float aVertexColorIndex;
     
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform vec4 uColors[7];
+      
+      varying lowp vec4 vColor;
+    
+      void main(void) {
+        int index = int(aVertexColorIndex);
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vColor = uColors[index];
+        //vColor = uColors[2];
+        //vColor = vec4(1.0);
+      }
+  </script>
+
+  <script id="shader-fs" type="x-shader/x-fragment">
+      varying lowp vec4 vColor;
+      
+      void main(void) {
+        gl_FragColor = vColor;
+        //gl_FragColor = vec4(1.0);
+      }
+  </script>
+
   </head>
   <body class="dark">
     <!--[if lt IE 10]>
@@ -40,7 +70,7 @@
 
     
     <div id="gameSpacer">
-      <div id="gameContainer" class="hero-unit"></div>
+      <canvas id="gameContainer" class="hero-unit" width="1080" height="1080"></canvas>
     </div>
     <div id="gameScoreZone">
       <form>
