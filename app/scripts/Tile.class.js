@@ -659,12 +659,21 @@ Tile.Update = function() {
 			vertexBuffer = Tile.vBuffer,
 			colorBuffer = Tile.cBuffer,
 			program = Tile.program,
-			perspectiveMatrix = makePerspective(45, 1, 15, 25),
 			data = renderAllTiles(Tile.all);
+
+		var xmin = -1,
+			ymin = -1,
+			xmax = Tile.width +1,
+			ymax = Tile.height +1,
+			perspectiveMatrix = makeOrtho(xmin, xmax, ymin, ymax, 15, 25),
+			camPosX = -0.5, // ??? xmin + xmax / 2,
+			camposY = ymax - 1.5; // okay this works, figure out why.
+
+
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		loadIdentity();
-		mvTranslate([-Tile.width / 2, Tile.height / 2, -20]);//TODO(Boris): calculate this!
+		mvTranslate([-camPosX, camposY, -20]);//TODO(Boris): calculate this!
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, data.vertices, gl.DYNAMIC_DRAW);
