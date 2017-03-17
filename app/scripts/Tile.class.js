@@ -901,39 +901,36 @@ function getShader(gl, id, replaces) {
 function renderAllTiles(tileArray){
 	var retVertices = new Float32Array(  tileArray.length * 6 * 3),
 		retColors = new Float32Array(tileArray.length * 6),
-		tile, x, y, offset, size;
+		tile, x, y, offset, size, rotation, cos, sin;
+	let MaxRotation = Math.PI / 3;
 	for(var i = 0; i < tileArray.length; ++i){
 		tile = tileArray[i];
 		x = tile.x;
 		y = -tile.y;
 
-		size = tile.moving ? 0.25 + 0.10 * tile.currentMove : 0.48;
-
 		offset = i * 6 * 3;
 
-		retVertices[offset +  0] = x - size;
-		retVertices[offset +  1] = y - size;
-		//retVertices[offset +  2] = 0
+		size = sin = cos = 0.48;
+		if(tile.moving){
+			size = 0.15 + 0.25 * tile.currentMove;
+			rotation = MaxRotation * tile.currentMove * size;
 
-		retVertices[offset +  3] = x + size;
-		retVertices[offset +  4] = y - size;
-		//retVertices[offset +  5] = 0;
+			cos  = Math.cos(rotation) * size;
+			sin  = Math.sin(rotation) * size;
 
-		retVertices[offset +  6] = x + size;
-		retVertices[offset +  7] = y + size;
-		//retVertices[offset +  8] = 0
+		}
+		retVertices[offset +  0] = retVertices[offset + 12] = x - cos; // same verices
+		retVertices[offset +  1] = retVertices[offset + 13] = y - sin; // idem
 
-		retVertices[offset +  9] = x - size;
-		retVertices[offset + 10] = y + size;
-		//retVertices[offset + 11] = 0;
+		retVertices[offset +  3] = x + sin;
+		retVertices[offset +  4] = y - cos;
 
-		retVertices[offset + 12] = x - size;
-		retVertices[offset + 13] = y - size;
-		//retVertices[offset + 14] = 0
+		retVertices[offset +  6] = retVertices[offset + 15] = x + cos; // same verices
+		retVertices[offset +  7] = retVertices[offset + 16] = y + sin; // idem
 
-		retVertices[offset + 15] = x + size;
-		retVertices[offset + 16] = y + size;
-		//retVertices[offset + 17] = 0;
+		retVertices[offset +  9] = x - sin;
+		retVertices[offset + 10] = y + cos;
+
 
 		for( let j = 6*i; j < 6*i + 6; ++j)
 			retColors[j] = parseInt(tile.tileColor) +2.01;//force int value
