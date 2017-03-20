@@ -44,7 +44,7 @@ TileGesture.prototype = {
 		tile = tile.neighbors[Tile.DIRS.indexOf(_dir)];
 		//tile is the tile to _dir from last tile
 		if(tile){
-			if(last && Tile.OPPDIRS.indexOf(last) == 3- Tile.OPPDIRS.indexOf(_dir)){
+			if(last && Tile.DIRS.indexOf(last) == 3- Tile.DIRS.indexOf(_dir)){
 				this.moves.pop();
 				this.tiles.pop().prepareMove(-1);
 				this.lastTile = _.last(this.tiles);
@@ -96,6 +96,7 @@ TG.Init = function(_container){
 	if(!TG.Ready){
 		$(document.body).on("keydown keyup", TileGesture.ProcessEvent)
 		$(_container).on("click", ".tile", TileGesture.ProcessEvent)
+		$(_container).on("click", TileGesture.ProcessEvent)
 		//$(_container).on("touchstart touchmove touchend", ".tile", Tile.handleTouch);
 		//$(_container).on("mousedown mouseup mouseenter mousemove", ".tile", Tile.handleMouse);
 		TG.Ready = true;
@@ -134,8 +135,15 @@ TG.ProcessEvent = function(_e){
 				//TG.Current.updated = _.now();
 			break;
 		case "click":
-			type = TileGesture.CLICK
-			tile = $(this).data('tile');
+			var type = TileGesture.CLICK,
+				target = _e.target,
+				clickX = _e.offsetX / target.clientWidth,
+				clickY = _e.offsetY / target.clientHeight;
+
+			x = Math.floor(clickX  * (Tile.width + 2)) -1;
+			y = Math.floor(clickY  * (Tile.height + 2)) -1;
+			tile = Tile.get(x, y);
+			console.log(x, y);
 			/*Tile.applyMoves(tile.moveList);
 			Tile.currentGesture = null;*/
 			//TODO
@@ -176,7 +184,8 @@ TG.ProcessEvent = function(_e){
 	}
 	if(dir || tile){
 		if(!TG.Current)
-			TG.Current = new TileGesture(type);
+			TG.Current = new TileGesture(type); // start new gesture
+
 		if(dir)
 			TG.Current.updateWithDirection(dir);
 		else

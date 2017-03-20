@@ -1,11 +1,15 @@
 'use strict';
 function Tile () {
-	this.dirtyClass = ["true"];
-	this.el = $('<div class="tile" />');
-	this.child = $('<div class="dead" />');
-	this.el.append(this.child);
-	this.el.data('tile', this);
-	this.child.data('tile', this);
+	if(Tile.isGPU){
+		this.tweenValue = 1.0;
+	}else{
+		this.dirtyClass = ["true"];
+		this.el = $('<div class="tile" />');
+		this.child = $('<div class="dead" />');
+		this.el.append(this.child);
+		this.el.data('tile', this);
+		this.child.data('tile', this);
+	}
 }
 //Tile.prototype = $('<div class="tile" />');
 Tile.prototype = {
@@ -27,13 +31,25 @@ Tile.prototype = {
 		this.addClass(this.classColor);
 		this.placeAt(_x, _y, true);
 		this.dirty();
-		this.el.prop('class',this.class.join(' '));
-		this.child.prop('class', "dead");
+		if(this.el){
+			this.el.prop('class',this.class.join(' '));
+			this.child.prop('class', "dead");
 
+			return TweenMax.to(
+					this.child, .5,
+					{
+						className: ""
+					}
+				);
+		}
+		this.tweenValue = 1.0;
+		this.prevX = _x;
+		this.prevY = _y;
+		
 		return TweenMax.to(
-				this.child, .5,
+				this, .5,
 				{
-					className: ""
+					tweenValue: 1.0
 				}
 			);
 	},
@@ -83,7 +99,8 @@ Tile.prototype = {
 				this.class.push(str);
 	},
 	setText : function(_str){
-		this.child.text(_str);
+		if(this.child)
+			this.child.text(_str);
 	},
 	release : function() {
 		var index = Tile.all.indexOf(this);
@@ -91,7 +108,6 @@ Tile.prototype = {
 			Tile.all.splice(index, 1);
 		this.tileColor = -1;
 		this.class.length = 0;
-		this.neighbors = 0;
 		index = Tile.groups.indexOf(this.group);
 		if(index != -1)
 			Tile.groups.splice(index, 1);
@@ -101,16 +117,27 @@ Tile.prototype = {
 		this.group = null;
 		this.moveList = null;
 		this.neighbors = null;
+		if(this.el)
+			return TweenMax.to(
+				this.child, .5,
+				{
+					className: 'dead',
+					onComplete: Tile.giveUp,
+					onCompleteParams: [this]
+				}
+			);
 		return TweenMax.to(
-			this.child, .5,
+			this, .5,
 			{
-				className: 'dead',
+				tweenValue: 0.0,
 				onComplete: Tile.giveUp,
 				onCompleteParams: [this]
 			}
 		);
 	},
 	moveTo : function(_x, _y) {
+		this.prevX = this.x;
+		this.prevY = this.y;
 		this.x = _x;
 		this.y = _y;
 		//var up = this.arrive.bind(this);
@@ -124,18 +151,29 @@ Tile.prototype = {
 				tile.neighbors[tile.neighbors.indexOf(this)] = null;
 			this.neighbors[i] = null;
 		}
-		//this.el.stop();
-		this.removeClass('up', 'down', 'left', 'right', 'isGroup', 'almostGroup', 'noGroup');
-		//this.el.addClass(this.class.join(' ') + " moving")
+		if(this.el){
+			//this.el.stop();
+			this.removeClass('up', 'down', 'left', 'right', 'isGroup', 'almostGroup', 'noGroup');
+			//this.el.addClass(this.class.join(' ') + " moving")
+			return TweenMax.to(
+				this.el, .5,
+				{
+					y: 5 + _y * 100 + 'px',
+					x: 5 + _x * 100 + 'px',
+					rotation : 0,
+					scale : 1.0,
+					//duration : 500,
+					className : this.class.join(' ') + " moving",
+					onComplete : this.arrive,
+					onCompleteScope : this,
+					overwrite : "all"
+				});
+		}
+		this.tweenValue = 0.0;
 		return TweenMax.to(
-			this.el, .5,
+			this, .5,
 			{
-				y: 5 + _y * 100 + 'px',
-				x: 5 + _x * 100 + 'px',
-				rotation : 0,
-				scale : 1.0,
-				//duration : 500,
-				className : this.class.join(' ') + " moving",
+				tweenValue : 1.0,
 				onComplete : this.arrive,
 				onCompleteScope : this,
 				overwrite : "all"
@@ -144,8 +182,10 @@ Tile.prototype = {
 	placeAt: function(_x, _y, _noUpdate) {
 		if(_x == _x)
 			this.x = _x;
+		this.prevX = this.x;
 		if(_y == _y)
 			this.y = _y;
+		this.prevY = this.y;
 		for(var i = 0; i < 4; ++i){
 			var tile = this.neighbors[i];
 			if(tile && tile.dirty())
@@ -153,32 +193,46 @@ Tile.prototype = {
 			this.neighbors[i] = null;
 		}
 		this.removeClass('moving');
-		TweenMax.set(
-			this.el,
-			{
-				rotation : 0,
-				scale : 1.0,
-				y : 5 + _y * 100,
-				x : 5 + _x * 100
-			}
-		);
+		if(this.el){
+			TweenMax.set(
+				this.el,
+				{
+					rotation : 0,
+					scale : 1.0,
+					y : 5 + _y * 100,
+					x : 5 + _x * 100
+				}
+			);
+		}
+		this.tweenValue = 0.0;
 		if(!_noUpdate)
 			this.update();
 	},
 	prepareMove: function(_part){
 		if(this.currentMove != _part){
 			if(_part == -1){
-				TweenMax.to(this.el, 0.5, {rotation : 0, scale : 1.0});
+				if(this.el)
+					TweenMax.to(this.el, 0.5, {rotation : 0, scale : 1.0, overwrite : "all"});
+				else
+					TweenMax.to(this, 0.5, {tweenValue : 1.0, overwrite : "all"});
+				this.prevX = this.x;
+				this.prevY = this.y;
 				this.moving = false;
 				this.removeClass('moving');
 				this.removeClass('turned');
 			}else{
-				TweenMax.to(this.el, 0.5, {rotation : 40 - _part * 30, scale : .25 + _part * .5});
+				if(this.el)
+					TweenMax.to(this.el, 0.5, {rotation : 40 - _part * 30, scale : .25 + _part * .5, overwrite : "all"});
+				else
+					TweenMax.to(this, 0.5, {tweenValue : 0.0, overwrite : "all"});
+				this.prevX = this.x;
+				this.prevY = this.y;
 				this.moving = true;
 				this.addClass('turned');
 				this.addClass('moving');
 			}
 			this.currentMove = _part;
+			//this.tweenValue = 0.0;
 		}
 		return this;
 	},
@@ -206,10 +260,10 @@ Tile.prototype = {
 			groups.push(this.group);
 		if(x < Tile.width -1) {
 			neighbor = Tile.get(x +1, y);
-			this.neighbors[2] = neighbor;
-			neighbor.neighbors[0] = this;
+			this.neighbors[Tile.LEFT] = neighbor;
+			neighbor.neighbors[Tile.RIGHT] = this;
 			if(neighbor.isHole) {
-				text = Tile.DIRS[0];
+				text = Tile.DIRS[Tile.RIGHT];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 				classes.push("right");
@@ -224,10 +278,10 @@ Tile.prototype = {
 
 		if(y > 0) {
 			neighbor = Tile.get(x, y -1);
-			this.neighbors[3] = neighbor;
-			neighbor.neighbors[1] = this;
+			this.neighbors[Tile.UP] = neighbor;
+			neighbor.neighbors[Tile.DOWN] = this;
 			if(neighbor.isHole) {
-				text = Tile.DIRS[1];
+				text = Tile.DIRS[Tile.DOWN];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 				classes.push("up");
@@ -242,10 +296,10 @@ Tile.prototype = {
 
 		if(x > 0) {
 			neighbor = Tile.get(x -1, y);
-			this.neighbors[0] = neighbor;
-			neighbor.neighbors[2] = this;
+			this.neighbors[Tile.RIGHT] = neighbor;
+			neighbor.neighbors[Tile.LEFT] = this;
 			if(neighbor.isHole) {
-				text = Tile.DIRS[2];
+				text = Tile.DIRS[Tile.LEFT];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 				classes.push("left");
@@ -260,10 +314,10 @@ Tile.prototype = {
 
 		if(y < Tile.height -1) {
 			neighbor = Tile.get(x, y +1);
-			this.neighbors[1] = neighbor;
-			neighbor.neighbors[3] = this;
+			this.neighbors[Tile.DOWN] = neighbor;
+			neighbor.neighbors[Tile.UP] = this;
 			if(neighbor.isHole) {
-				text = Tile.DIRS[3];
+				text = Tile.DIRS[Tile.UP];
 				moves.push(text);
 				text = Tile.DIRTEXTS[text]
 				classes.push("down");
@@ -304,21 +358,30 @@ Tile.prototype = {
 		Tile.releaseArray(classes);
 		Tile.releaseArray(groups);
 		group = this.class.join(' ');
-		neighbor = this.el.prop('class');
-		if(neighbor != group){
-			this.dirtyClass = true;
-			if(Tile.allDirtyClasses.indexOf(this) == -1)
-				Tile.allDirtyClasses.push(this);
+		if(this.el){
+			neighbor = this.el.prop('class');
+			if(neighbor != group){
+				this.dirtyClass = true;
+				if(Tile.allDirtyClasses.indexOf(this) == -1)
+					Tile.allDirtyClasses.push(this);
+			}			
 		}
 	}
 };
 Tile.LIGHT_COLORS = [0x000, 0xA00, 0x0A0, 0x00A, 0xAA0, 0x0AA, 0xA0D];
-Tile.DARK_COLORS  = [0x000, 0xF88, 0x8F8, 0x88F, 0xFF8, 0x8FF, 0xF8F];
+Tile.DARK_COLORS  = [0x000, 0xF88, 0x5A3, 0x88F, 0xFF8, 0x8FF, 0xF8F];
 
 Tile.NUM_COLORS = 6;
 Tile.numColors = 6;
-Tile.DIRS = ["right","up","left","down"];
-Tile.OPPDIRS = ["right","up","down","left"];
+//Tile.DIRS = ["right","up","left","down"];
+
+Tile.UP = 0;
+Tile.DOWN = 3;
+Tile.LEFT = 1;
+Tile.RIGHT = 2;
+
+Tile.DIRS = ["up","left","right","down"]; // up + down == right + left
+
 const 	left = 0,
 		down = 1,
 		right = 2,
@@ -354,9 +417,9 @@ Tile.swapDirs = function(_val) {
 	if(_val && _val.type == "change")
 		_val = _val.target.checked;
 	if(_val)
-		Tile.DIRTEXTS = {right : "→",up : "↑",left : "←",down : "↓"};
+		Tile.DIRTEXTS = {up : "↑",right : "→",left : "←",down : "↓"};
 	else
-		Tile.DIRTEXTS = {right : "←",up : "↓",left : "→",down : "↑"};
+		Tile.DIRTEXTS = {up : "↓",right : "←",left : "→",down : "↑"};
 	Tile.invertedDirs = _val;
 	for(var tile of Tile.all)
 		tile.update()
@@ -386,12 +449,12 @@ Tile.swap = function(_tile1, _tile2) {
 	_tile2.moveTo(x,y);
 }
 Tile.giveUp = function(_tile){
-	_tile.el.detach();
 	Tile.tileColor = -1;
 	Tile.releaseArray(_tile.class);
 	_tile.class = null;
 	if(Tile.pool.indexOf(_tile) == -1)
 		Tile.pool.push(_tile);
+	_tile.el && _tile.el.detach();
 }
 Tile.releaseAll = function(){
 	if(Tile.lockdown)
@@ -437,8 +500,6 @@ Tile.Init = function(_options) {
 	}
 	container = options.container || $('#gameContainer');
 	switch(container[0].tagName.toUpperCase()){
-		case "DIV":
-			break;
 		case "CANVAS":
 			var canvas = container[0],
 				gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
@@ -455,8 +516,13 @@ Tile.Init = function(_options) {
 			//Tile.colorAttribute = gl.getAttribLocation(Tile.program, "aVertexColor");
 			//Tile.colorIndexAttribute = gl.getAttribLocation(Tile.program, "aVertexColorIndex");
 			console.log(gl);
+			Tile.sortByClass = Tile.sortByClassGPU;
 			break;
+		case "DIV":
 		default:
+			Tile.isGPU = false;
+			Tile.sortByClass = Tile.sortByClassNoGPU;
+				break;
 	}
 	var remove = _.random(w * h -1),
 		arr = Tile.giveMeAnArray();
@@ -499,7 +565,7 @@ Tile.Init = function(_options) {
 				});
 				colors[tile.tileColor] = true;
 			}
-			tile.el.appendTo(container);
+			//tile.el.appendTo(container);
 			Tile.cols[i][j] = tile;
 			Tile.rows[j][i] = tile;
 			Tile.all.push(tile);
@@ -567,8 +633,11 @@ Tile.resize = function(){
 		hRatio = h / (Tile.containerHeight + m[0] + m[2]);
 	TweenMax.to(c, .5, {scale: Math.min(wRatio, hRatio)});
 }
-Tile.sortByClass = function(_a, _b) {
+Tile.sortByClass = Tile.sortByClassNoGPU = function(_a, _b) {
 	return _a.el.prop('class').length - _b.el.prop('class').length;
+}
+Tile.sortByClassGPU = function(_a, _b) {
+	return _a.class.length - _b.class.length;
 }
 Tile.checkSizes = function(_e) {
 	if(!_e ||_e.target == $("#widthInput")[0]){
@@ -653,7 +722,7 @@ Tile.randomInit = function() {
 Tile.Update = function() {
 	kd.tick();
 	Tile.lockdown = false;
-	if(Tile.glContext){
+	if(Tile.isGPU){
 		var start = _.now();
 		var gl = Tile.glContext,
 			vertexBuffer = Tile.vBuffer,
@@ -667,7 +736,7 @@ Tile.Update = function() {
 			ymax = Tile.height +1,
 			perspectiveMatrix = makeOrtho(xmin, xmax, ymin, ymax, 15, 25),
 			camPosX = -0.5, // ??? xmin + xmax / 2,
-			camposY = ymax - 1.5; // okay this works, figure out why.
+			camposY = 0.5; // okay this works, figure out why.
 
 
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -690,7 +759,7 @@ Tile.Update = function() {
 		//console.log(Tile.colorsUniformBuffer);
 
 		gl.drawArrays(gl.TRIANGLES, 0, (Tile.all.length)* 6);
-		console.log("rendertime : ", _.now() - start);
+		//console.log("rendertime : ", _.now() - start);
 	}
 	//else
 	{
@@ -706,20 +775,22 @@ Tile.Update = function() {
 				if(group.length >= Tile.threshold){
 					group.sort(Tile.sortByClass);
 				}
-				for(tile of group){
-					if( group.length >= Tile.threshold){
-						tile.removeClass('almostGroup', 'noGroup');
-						tile.addClass('isGroup');
-						if(totest && tile.child.text() == ""){
-							totest = false;
-							tile.setText(group.length);
+				if(!Tile.isGPU){
+					for(tile of group){
+						if( group.length >= Tile.threshold){
+							tile.removeClass('almostGroup', 'noGroup');
+							tile.addClass('isGroup');
+							if(totest && tile.child.text() == ""){
+								totest = false;
+								tile.setText(group.length);
+							}
+						}else if( group.length > 1){
+							tile.removeClass('isGroup', 'noGroup');
+							tile.addClass('almostGroup');
+						}else{
+							tile.removeClass('almostGroup', 'isGroup');
+							tile.addClass('noGroup')	
 						}
-					}else if( group.length > 1){
-						tile.removeClass('isGroup', 'noGroup');
-						tile.addClass('almostGroup');
-					}else{
-						tile.removeClass('almostGroup', 'isGroup');
-						tile.addClass('noGroup')	
 					}
 				}
 			}
@@ -733,21 +804,25 @@ Tile.Update = function() {
 	str = Tile.moves + " moves";
 	if($("#score").text() != str)
 		$("#score").text(str);
-	while(Tile.allDirtyClasses.length){
-		if(_.now() > start + 10){
-			break;
-		}
-		tile = Tile.allDirtyClasses.shift();
-		if(!tile.moving && tile.dirtyClass){
-			arr.push(TweenMax.to(
-				tile.el, .5,
-				{
-					className: tile.class.join(' ')
-				}
-			));
-			tile.dirtyClass = false;
-			/*requestAnimationFrame(Tile.Update);
-			return;*/
+	if(Tile.isGPU){
+
+	}else{
+		while(Tile.allDirtyClasses.length){
+			if(_.now() > start + 10){
+				break;
+			}
+			tile = Tile.allDirtyClasses.shift();
+			if(!tile.moving && tile.dirtyClass){
+				arr.push(TweenMax.to(
+					tile.el, .5,
+					{
+						className: tile.class.join(' ')
+					}
+				));
+				tile.dirtyClass = false;
+				/*requestAnimationFrame(Tile.Update);
+				return;*/
+			}
 		}
 	}
 	_.shuffle(arr);
@@ -773,26 +848,6 @@ Tile.Update = function() {
 		"#gameContainer::after{height : " + (update + 8) + "px; top : " + (top -4) + "px;}\n" +
 		"#gameContainer::before{width : " + (update + 8) + "px; left : " + (top -4) + "px;}"
 	);
-
-	/*if(Tile.currentGesture){
-		if(Tile.currentGesture.ended){
-			var now = _.now();
-			if(Tile.currentGesture.nextMove < now){
-				var move = Tile.currentGesture.moves.shift()
-				if(move){
-					Tile.applyMoves(move);
-					if(Tile.currentGesture.moves.length < 25)
-						Tile.currentGesture.nextMove = now + 50;
-					else
-						Tile.currentGesture.nextMove = now + 10;
-				}else{
-					Tile.currentGesture = null;
-					$('.tile').removeClass('moving');
-				}
-			}
-		}else if(Tile.currentGesture.lastUpdated < _.now() - (350 + Tile.currentGesture.moves.length * 50))
-			Tile.endGesture();
-	}//*/
 }
 Tile.lockdown = true;
 Tile.isPlaying = true;
@@ -808,6 +863,7 @@ Tile.nextMoves = Tile.giveMeAnArray();
 Tile.allDirtyClasses = Tile.giveMeAnArray();
 Tile.threshold = 4;
 Tile.isDark = true;
+Tile.isGPU = true;
 Tile.swapDirs(false);
 
 
@@ -901,23 +957,29 @@ function getShader(gl, id, replaces) {
 function renderAllTiles(tileArray){
 	var retVertices = new Float32Array(  tileArray.length * 6 * 3),
 		retColors = new Float32Array(tileArray.length * 6),
-		tile, x, y, offset, size, rotation, cos, sin;
+		tile, x, y, offset, size, rotation, cos, sin, tween;
 	let MaxRotation = Math.PI / 3;
 	for(var i = 0; i < tileArray.length; ++i){
 		tile = tileArray[i];
-		x = tile.x;
-		y = -tile.y;
+		tween = tile.tweenValue;
+		x = tile.prevX + (tile.x - tile.prevX) * tween;
+		y = tile.prevY + (tile.y - tile.prevY) * tween;
 
 		offset = i * 6 * 3;
 
-		size = sin = cos = 0.48;
-		if(tile.moving){
-			size = 0.15 + 0.25 * tile.currentMove;
+		if(tween < 1.0){
+			console.log(tile.tweenValue);
+			if(tile.currentMove >= 0)
+				size = 0.15 + 0.25 * tile.currentMove * (tween);
+			else
+				size = 0.15 + 0.25 * (tween);
 			rotation = MaxRotation * tile.currentMove * size;
 
 			cos  = Math.cos(rotation) * size;
 			sin  = Math.sin(rotation) * size;
 
+		}else{
+			size = sin = cos = 0.48;
 		}
 		retVertices[offset +  0] = retVertices[offset + 12] = x - cos; // same verices
 		retVertices[offset +  1] = retVertices[offset + 13] = y - sin; // idem
