@@ -968,7 +968,7 @@ function renderAllTiles(tileArray){
 		offset = i * 6 * 3;
 
 		if(tween < 1.0){
-			console.log(tile.tweenValue);
+			//console.log(tile.tweenValue);
 			if(tile.currentMove >= 0)
 				size = 0.15 + 0.25 * tile.currentMove * (tween);
 			else

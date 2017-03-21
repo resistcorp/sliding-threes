@@ -57,34 +57,38 @@ TileGesture.prototype = {
 				this.moves.push(_dir);
 				this.updated = _.now();
 			}
-			for(i = 0; i < this.tiles.length; ++i){
-				tile = this.tiles[i]
-				if(Tile.hole != tile)
-					tile.isHole = false;
-				if(i == this.tiles.lastIndexOf(tile))
-					tile.prepareMove( ( 1 + i ) / this.tiles.length);
-			}
+			this.updateTiles();
 			//tile.isHole = true;
 		}
 	},
 	updateWithTile : function(_type, _tile, _x, _y, _eventType){
 		if(_type == this.type){
 			if(_tile){
-				if(this.realTiles.length == 1 && _tile == Tile.hole ){
+				if(this.tiles.length == 1 && _tile == Tile.hole ){
 					//remove last move
-					this.realTiles.pop();
+					this.tiles.pop();
 				}else{
-					if(this.realTiles.length >= 2 && this.realTiles[this.realTiles.length-1] == _tile )
+					if(this.tiles.length >= 2 && this.tiles[this.tiles.length-1] == _tile )
 						//remove last move
-						this.realTiles.pop();
+						this.tiles.pop();
 					else
-						this.realTiles.push(_tile);
+						this.tiles.push(_tile);
 					this.lastTile = _tile;
 				}
+				this.updated = _.now();
+				this.updateTiles();
 			}
-			this.updated = _.now();
 		}else{
 			//meh! on verra plus tard les cas spéciaux
+		}
+	},
+	updateTiles : function(){
+		for(i = 0; i < this.tiles.length; ++i){
+			tile = this.tiles[i]
+			if(Tile.hole != tile)
+				tile.isHole = false;
+			if(i == this.tiles.lastIndexOf(tile))
+				tile.prepareMove( ( 1 + i ) / this.tiles.length);
 		}
 	},
 	startAt : function(_x, _y){
@@ -141,7 +145,7 @@ TG.ProcessEvent = function(_e){
 				clickY = _e.offsetY / target.clientHeight;
 
 			x = Math.floor(clickX  * (Tile.width + 2)) -1;
-			y = Math.floor(clickY  * (Tile.height + 2)) -1;
+			y = Tile.height - Math.floor(clickY  * (Tile.height + 2));
 			tile = Tile.get(x, y);
 			console.log(x, y);
 			/*Tile.applyMoves(tile.moveList);
