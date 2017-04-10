@@ -35,19 +35,22 @@
     <!-- endbuild -->
   
   <script id="shader-vs" type="x-shader/x-vertex">
-      attribute vec3 aVertexPosition;
+      attribute vec2 aVertexPosition;
       attribute float aVertexColorIndex;
+      attribute vec2 aVertexCoord;
     
       uniform mat4 uMVMatrix;
       uniform mat4 uPMatrix;
       uniform vec4 uColors[{NUM_COLORS}];
       
       varying lowp vec4 vColor;
+      varying lowp vec2 vCoord;
     
       void main(void) {
         int index = int(floor(aVertexColorIndex));
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 0.0, 1.0);
         vColor = uColors[index];
+        vCoord = aVertexCoord;
         //vColor = uColors[2];
         //vColor = vec4(1.0);
       }
@@ -55,9 +58,12 @@
 
   <script id="shader-fs" type="x-shader/x-fragment">
       varying lowp vec4 vColor;
+      varying lowp vec2 vCoord;
       
       void main(void) {
-        gl_FragColor = vColor.rgba;
+        lowp float a = 1000.0 * min(vCoord.x, vCoord.y);
+        gl_FragColor = vec4(vColor.rgb, clamp(a, 0.0, 1.0));
+        //gl_FragColor.a = a;
         //gl_FragColor = vec4(1.0);
       }
   </script>

@@ -505,7 +505,8 @@ Tile.Init = function(_options) {
 				gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
 			Tile.glContext = gl;
 			var vBuffer = gl.createBuffer(),
-				cBuffer = gl.createBuffer();
+				cBuffer = gl.createBuffer(),
+				iBuffer = gl.createBuffer();
 
 			Tile.program = initShaders(gl);
 			Tile.initColorUniform(Tile.isDark);
@@ -513,6 +514,7 @@ Tile.Init = function(_options) {
 			gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 			Tile.vBuffer = vBuffer;
 			Tile.cBuffer = cBuffer;
+			Tile.iBuffer = iBuffer;
 			//Tile.colorAttribute = gl.getAttribLocation(Tile.program, "aVertexColor");
 			//Tile.colorIndexAttribute = gl.getAttribLocation(Tile.program, "aVertexColorIndex");
 			console.log(gl);
@@ -727,6 +729,7 @@ Tile.Update = function() {
 		var gl = Tile.glContext,
 			vertexBuffer = Tile.vBuffer,
 			colorBuffer = Tile.cBuffer,
+			indexBuffer = Tile.iBuffer,
 			program = Tile.program,
 			data = renderAllTiles(Tile.all);
 
@@ -742,23 +745,29 @@ Tile.Update = function() {
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		loadIdentity();
-		mvTranslate([-camPosX, camposY, -20]);//TODO(Boris): calculate this!
+		mvTranslate([-camPosX, camposY, -20]);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, data.vertices, gl.DYNAMIC_DRAW);
-		gl.vertexAttribPointer(Tile.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(Tile.vertexPositionAttribute, 2, gl.FLOAT, false, 0, 0);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, data.colors, gl.DYNAMIC_DRAW);
 		gl.vertexAttribPointer(Tile.vColorIndexAttribute, 1, gl.FLOAT, false, 0, 0);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, indexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, data.indices, gl.DYNAMIC_DRAW);
+		gl.vertexAttribPointer(Tile.vCoordIndex, 2, gl.FLOAT, false, 0, 0);
 
 		setMatrixUniforms(gl, program, perspectiveMatrix);
 
 		var colorUniform = gl.getUniformLocation(Tile.program, "uColors");
 		gl.uniform4fv(colorUniform, Tile.colorsUniformBuffer);
 		//console.log(Tile.colorsUniformBuffer);
-
-		gl.drawArrays(gl.TRIANGLES, 0, (Tile.all.length)* 6);
+		gl.enable(gl.BLEND);
+		gl.blendColor(0.0, 0.0, 0.0, 0.0);
+		gl.blendFunc(gl.SRC_ALPHA, gl.DST_ALPHA);
+		gl.drawArrays(gl.TRIANGLES, 0, (Tile.all.length) * 3 );
 		//console.log("rendertime : ", _.now() - start);
 	}
 	//else
@@ -796,7 +805,6 @@ Tile.Update = function() {
 			}
 		}
 	}
-	Tile.loop = requestAnimationFrame(Tile.Update);
 	var arr = Tile.giveMeAnArray(),
 		str = (Tile.groups.length -1)+ " groups";
 	if($("#progress").text() != str)
@@ -848,6 +856,7 @@ Tile.Update = function() {
 		"#gameContainer::after{height : " + (update + 8) + "px; top : " + (top -4) + "px;}\n" +
 		"#gameContainer::before{width : " + (update + 8) + "px; left : " + (top -4) + "px;}"
 	);
+	Tile.loop = requestAnimationFrame(Tile.Update);
 }
 Tile.lockdown = true;
 Tile.isPlaying = true;
@@ -903,6 +912,9 @@ function initShaders(gl) {
 
   Tile.vColorIndexAttribute = gl.getAttribLocation(shaderProgram, "aVertexColorIndex");
   gl.enableVertexAttribArray(Tile.vColorIndexAttribute);
+
+  Tile.vCoordIndex = gl.getAttribLocation(shaderProgram, "aVertexCoord");
+  gl.enableVertexAttribArray(Tile.vCoordIndex);
   return shaderProgram;
 }
 function getShader(gl, id, replaces) {
@@ -955,49 +967,98 @@ function getShader(gl, id, replaces) {
 }
 
 function renderAllTiles(tileArray){
-	var retVertices = new Float32Array(  tileArray.length * 6 * 3),
-		retColors = new Float32Array(tileArray.length * 6),
-		tile, x, y, offset, size, rotation, cos, sin, tween;
+	var retVertices = new Float32Array( tileArray.length * 2 * 3),
+		retColors = new Float32Array(tileArray.length * 3),
+		retIndices = new Float32Array(tileArray.length * 2 * 3),
+		tile, x, y, offset, size, rotation, cos, sin, tween,
+		diminution, color, p, r;
 	let MaxRotation = Math.PI / 3;
 	for(var i = 0; i < tileArray.length; ++i){
 		tile = tileArray[i];
-		tween = tile.tweenValue;
-		x = tile.prevX + (tile.x - tile.prevX) * tween;
-		y = tile.prevY + (tile.y - tile.prevY) * tween;
+		tween = ( 1 - tile.tweenValue );
 
-		offset = i * 6 * 3;
+		offset = i * 3 * 2;
 
-		if(tween < 1.0){
+		if(tile.prevX != tile.x)
+			x = tile.x - (tile.x - tile.prevX) * tween;
+		else
+			x = tile.x;
+		if(tile.prevY != tile.y)
+			y = tile.y - (tile.y - tile.prevY) * tween;
+		else
+			y = tile.y;
+		if(tween > 0){
 			//console.log(tile.tweenValue);
-			if(tile.currentMove >= 0)
-				size = 0.15 + 0.25 * tile.currentMove * (tween);
-			else
-				size = 0.15 + 0.25 * (tween);
-			rotation = MaxRotation * tile.currentMove * size;
-
-			cos  = Math.cos(rotation) * size;
-			sin  = Math.sin(rotation) * size;
-
+			if(tile.currentMove >= 0){
+				diminution = 0.28 * tile.currentMove;
+				size = 0.48 - diminution * tween;
+				rotation = MaxRotation * ( tween ) * tile.currentMove;
+				cos  = Math.cos(rotation);// * size;
+				sin  = Math.sin(rotation);// * size;
+				r = [cos, sin];
+			}else{
+				size = 0.48 * tween;
+				rotation = 0;
+				//cos = Math.cos(rotation);// * size;
+				//sin = Math.sin(rotation);// * size;
+				r = [0, 1];
+			}
 		}else{
-			size = sin = cos = 0.48;
+			size = 0.48;
+			//sin = cos = 0.48;
+			r = [1, 0];
 		}
-		retVertices[offset +  0] = retVertices[offset + 12] = x - cos; // same verices
+		//cos *= 2;
+		//sin *= 2;
+		//size *= 2;
+		/*retVertices[offset +  0] = retVertices[offset + 12] = x - cos; // same vertices
 		retVertices[offset +  1] = retVertices[offset + 13] = y - sin; // idem
 
 		retVertices[offset +  3] = x + sin;
 		retVertices[offset +  4] = y - cos;
 
-		retVertices[offset +  6] = retVertices[offset + 15] = x + cos; // same verices
+		retVertices[offset +  6] = retVertices[offset + 15] = x + cos; // same vertices
 		retVertices[offset +  7] = retVertices[offset + 16] = y + sin; // idem
 
 		retVertices[offset +  9] = x - sin;
-		retVertices[offset + 10] = y + cos;
+		retVertices[offset + 10] = y + cos;//*/
 
+		p = rotate(-size, -size, r);
+		retVertices[offset +  0] = x + p.x;
+		retVertices[offset +  1] = y + p.y;
 
-		for( let j = 6*i; j < 6*i + 6; ++j)
-			retColors[j] = parseInt(tile.tileColor) +2.01;//force int value
+		p = rotate( 3 * size, -size, r);
+		retVertices[offset +  2] = x + p.x;
+		retVertices[offset +  3] = y + p.y;
+
+		p = rotate(-size, 3 * size, r);
+		retVertices[offset +  4] = x + p.x;
+		retVertices[offset +  5] = y + p.y;
+
+		offset = 2 * 3 * i;
+		retIndices[offset +0] = 1;
+		retIndices[offset +1] = 1;
+		retIndices[offset +2] = -1;
+		retIndices[offset +3] = 1;
+		retIndices[offset +4] = 1;
+		retIndices[offset +5] = -1;
+
+		offset = 3 * i;
+		color = parseInt(tile.tileColor) +2.01;
+		for( let j = 0; j < 3; ++j){
+			retColors[offset +j] = color;//force int value
+		}
 	}
 	//console.log(retVertices);
 	//console.log(retColors);
-	return {vertices : retVertices, colors: retColors};
+	return {vertices : retVertices, colors: retColors, indices: retIndices};
+}
+//rotate a point by a rotor
+//I use rotation in the complex plane, because it's fun.
+//the rotor is of the form [a, b], representing a + bi
+function rotate(x, y, rotor){
+	return {
+		x : x * rotor[0] - y * rotor[1],
+		y : y * rotor[0] + x * rotor[1]
+	};
 }
